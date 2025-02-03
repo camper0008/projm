@@ -35,8 +35,6 @@ export class Board {
     private handleUiEvent(event: UiEvent) {
         switch (event.type) {
             case "drag_start":
-                console.log(this);
-                console.log("handleuievent: this.dragging is", this.dragging);
                 if (this.dragging !== null) {
                     throw new Error(
                         "unreachable: began new dragging session without cleaning up old dragging session",
@@ -52,7 +50,6 @@ export class Board {
     }
 
     private mouseUp(position: [number, number]) {
-        console.log("mouseup: this.dragging is", this.dragging);
         if (this.dragging === null) {
             return;
         }
@@ -75,7 +72,7 @@ export class Board {
     private newSession() {
         this.dragZone = new DragZone();
         const renderer = new Renderer({
-            eventHandler: this.handleUiEvent,
+            eventHandler: (event: UiEvent) => this.handleUiEvent(event),
             dragZone: this.dragZone,
         });
         this.element.replaceChildren(...renderer.render(this.state));

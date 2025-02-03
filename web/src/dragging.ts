@@ -15,21 +15,25 @@ export class Dragging {
         this.ghost = this.clone(ref);
         this.column = column;
         this.task = task;
+        document.body.classList.add("ghost-dragging");
     }
 
     destruct() {
         this.ghost.remove();
+        document.body.classList.remove("ghost-dragging");
     }
 
     moveGhost([x, y]: [number, number]) {
-        this.ghost.style.x = `${x}px`;
-        this.ghost.style.y = `${y}px`;
+        this.ghost.style.left = `${x}px`;
+        this.ghost.style.top = `${y}px`;
     }
 
     private clone(element: HTMLElement): HTMLElement {
         const clone = document.createElement("div");
-        clone.outerHTML = element.outerHTML;
-        clone.classList.add("ghost");
+        clone.innerHTML = element.innerHTML;
+        clone.style.backgroundColor = element.style.backgroundColor;
+        clone.classList.add("task", "ghost");
+        document.body.append(clone);
         return clone;
     }
 }

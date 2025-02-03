@@ -40,6 +40,7 @@ export class Renderer {
     private taskToolbarButton(
         icon: string,
         tooltip: string,
+        cursor: string = "pointer",
     ): HTMLElement {
         const button = document.createElement("button");
         button.classList.add("task-toolbar-button");
@@ -48,6 +49,7 @@ export class Renderer {
         iconElement.textContent = icon;
         button.append(iconElement);
         button.title = tooltip;
+        button.style.cursor = cursor;
         return button;
     }
 
@@ -84,6 +86,7 @@ export class Renderer {
         const dragButton = this.taskToolbarButton(
             "drag_indicator",
             "Rearrange task",
+            "grab",
         );
         dragButton.addEventListener("mousedown", () => {
             this.eventHandler({
