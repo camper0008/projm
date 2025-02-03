@@ -25,7 +25,12 @@ export class DragZone {
     createDragZone(parent: DragParent, index: number): HTMLElement {
         const zone = document.createElement("div");
         zone.classList.add("drag-zone");
-        this.zones.push({ element: zone, parent, index, id: this.idCounter });
+        this.zones.push({
+            element: zone,
+            parent,
+            index: index,
+            id: this.idCounter,
+        });
         this.idCounter += 1;
         return zone;
     }

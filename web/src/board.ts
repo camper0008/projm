@@ -2,7 +2,7 @@ import { Renderer } from "./render.ts";
 import { DragZone, Zone } from "./drag_zone.ts";
 import { Column, Id, Task, UiEvent } from "./models.ts";
 import { Dragging } from "./dragging.ts";
-import { id } from "./id.ts";
+import { Client } from "./client.ts";
 
 export interface BoardOptions {
     element: HTMLElement;
@@ -32,48 +32,45 @@ export class Board {
         );
     }
 
-    private findAndDeleteTask(options: { task: Id; tasks: Task[] }): boolean {
-        const found = options.tasks.findIndex((v) => v.id === options.task);
-        if (found !== -1) {
-            /// TODO: add a "Client.removeTask(): Task" call
-
-            options.tasks.splice(found, 1);
-            return true;
-        }
-
-        for (const task of options.tasks) {
-            const deleted = this.findAndDeleteTask({
-                task: options.task,
-                tasks: task.children,
-            });
-            if (deleted) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private deleteTaskEvent(event: UiEvent & { "type": "delete" }) {
-        const column = this.state.find((v) => v.id === event.column);
-        if (!column) {
-            throw new Error(
-                "unreachable: cannot delete already deleted column",
-            );
-        }
-        const success = this.findAndDeleteTask({
+    private async deleteTaskEvent(event: UiEvent & { "type": "delete" }) {
+        await (new Client()).removeTask();
+        const task = this.findTask({
+            column: event.column,
             task: event.task,
-            tasks: column.children,
-        });
-        if (!success) {
+        }, null);
+        if (!task) {
             throw new Error(
                 "unreachable: cannot delete already deleted task",
             );
         }
+        task.peers.splice(task.index, 1);
         this.newSession();
     }
 
-    private findAndMoveTask(zone: Zone) {
+    private findTask(
+        options: { column: Id; task: Id },
+        tasks: Task[] | null,
+    ): { index: number; peers: Task[] } | null {
+        if (!tasks) {
+            const column = this.state.find((v) => v.id === options.column);
+            if (!column) {
+                throw new Error(
+                    "unreachable: cannot find a deleted column",
+                );
+            }
+            return this.findTask(options, column.children);
+        }
+        const task = tasks.findIndex((task) => task.id === task.id);
+        if (task !== -1) {
+            return { index: task, peers: tasks };
+        }
+
+        return tasks
+            .map((v) => this.findTask(options, v.children))
+            .find((v) => v !== null) ?? null;
+    }
+
+    private findAndMoveTask(zone: Zone, oldTask: { column: Id; task: Id }) {
     }
 
     private dragStartEvent(event: UiEvent & { "type": "drag_start" }) {
@@ -86,55 +83,26 @@ export class Board {
         this.dragZone.showZones();
     }
 
-    private findAndAddTask(
-        options: { content: string; task: Id; tasks: Task[] },
-    ): boolean {
-        const found = options.tasks.find((v) => v.id === options.task);
-        if (found !== undefined) {
-            /// TODO: replace with a "Client.createTask(): Task" call
-            found.children.push({
-                id: id(),
-                content: options.content,
-                children: [],
-            });
-            return true;
-        }
-
-        for (const task of options.tasks) {
-            const added = this.findAndAddTask({
-                content: options.content,
-                task: options.task,
-                tasks: task.children,
-            });
-            if (added) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private addTaskEvent(event: UiEvent & { "type": "add" }) {
-        const column = this.state.find((v) => v.id === event.column);
-        if (!column) {
+    private async addTaskEvent(event: UiEvent & { "type": "add" }) {
+        const task = this.findTask(
+            { column: event.column, task: event.task },
+            null,
+        );
+        if (!task) {
             throw new Error(
-                "unreachable: cannot add to deleted column",
+                "unreachable: cannot add to deleted task",
             );
         }
         const content = prompt("Content of task?");
         if (!content) {
             return;
         }
-        const success = this.findAndAddTask({
+        const id = await (new Client().addTask());
+        task.peers[task.index].children.push({
+            id: id,
             content,
-            task: event.task,
-            tasks: column.children,
+            children: [],
         });
-        if (!success) {
-            throw new Error(
-                "unreachable: cannot add to deleted task",
-            );
-        }
         this.newSession();
     }
 
@@ -155,9 +123,12 @@ export class Board {
             return;
         }
 
-        /* move dragging object or summin */
         const closest = this.dragZone.closestDragZone(position);
-        const pos = this.dragZone.zoneFromId(closest);
+        const zone = this.dragZone.zoneFromId(closest);
+        this.findAndMoveTask(zone, {
+            column: this.dragging.column,
+            task: this.dragging.task,
+        });
 
         this.dragZone.hideZones();
         this.dragging.destruct();
