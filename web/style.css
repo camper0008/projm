@@ -6,8 +6,8 @@
     font-family: sans-serif;
 }
 
-body.dragging-object {
-    cursor: grabbing;
+body.dragging-object * {
+    cursor: grabbing !important;
 }
 
 .board {
@@ -96,6 +96,10 @@ body.dragging-object {
 
 .drag-zone.highlighted {
     opacity: 1.0;
+}
+
+.drag-zone:has( + .being-dragged), .being-dragged + .drag-zone {
+    display: none;
 }
 
 .being-dragged .drag-zone {

@@ -60,7 +60,7 @@ export class Board {
             }
             return this.findTask(options, column.children);
         }
-        const task = tasks.findIndex((task) => task.id === task.id);
+        const task = tasks.findIndex((task) => task.id === options.task);
         if (task !== -1) {
             return { index: task, peers: tasks };
         }
@@ -71,6 +71,10 @@ export class Board {
     }
 
     private findAndMoveTask(zone: Zone, oldTask: { column: Id; task: Id }) {
+        const old = this.findTask({
+            column: oldTask.column,
+            task: oldTask.task,
+        }, null);
     }
 
     private dragStartEvent(event: UiEvent & { "type": "drag_start" }) {
