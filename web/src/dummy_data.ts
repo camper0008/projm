@@ -8,7 +8,7 @@ export function column(): Column {
     return {
         id: id(),
         title: "column 1",
-        tasks: [{
+        children: [{
             id: id(),
             content: "test 1",
             children: [

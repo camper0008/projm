@@ -18,9 +18,10 @@ export interface Zone {
     index: number;
 }
 
-export class Drag {
+export class DragZone {
     private idCounter: ZoneId = 0;
     private zones: Zone[] = [];
+
     createDragZone(parent: DragParent, index: number): HTMLElement {
         const zone = document.createElement("div");
         zone.classList.add("drag-zone");
@@ -47,7 +48,7 @@ export class Drag {
             distB - distA
         ).pop();
         if (!closest) {
-            throw Error(
+            throw new Error(
                 "unreachable: tried to get closest drag zone with no drag zones created",
             );
         }
