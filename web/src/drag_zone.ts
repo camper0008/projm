@@ -30,6 +30,11 @@ export class DragZone {
         return zone;
     }
 
+    private zoneActive(zone: Zone): boolean {
+        const { width, height } = zone.element.getBoundingClientRect();
+        return (width > 0 && height > 0);
+    }
+
     private distance(zone: Zone, [x, y]: [number, number]): number {
         const bounds = zone.element.getBoundingClientRect();
         const zoneX = bounds.x + bounds.width * 0.5;
@@ -41,9 +46,11 @@ export class DragZone {
     }
 
     closestDragZone([x, y]: [number, number]): ZoneId {
-        const distances: [Zone, number][] = this.zones.map(
-            (zone) => [zone, this.distance(zone, [x, y])],
-        );
+        const distances: [Zone, number][] = this.zones
+            .filter(this.zoneActive)
+            .map(
+                (zone) => [zone, this.distance(zone, [x, y])],
+            );
         const closest = distances.toSorted(([_, distA], [__, distB]) =>
             distB - distA
         ).pop();

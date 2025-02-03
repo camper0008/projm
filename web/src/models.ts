@@ -25,6 +25,7 @@ export type UiEvent = {
     column: Id;
     task: Id;
     ref: HTMLElement;
+    position: [number, number];
 };
 
 export type UiEventHandler = (event: UiEvent) => void;

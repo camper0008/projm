@@ -1,8 +1,5 @@
 import { Column } from "./models.ts";
-
-function id(): string {
-    return crypto.randomUUID();
-}
+import { id } from "./id.ts";
 
 export function column(): Column {
     return {

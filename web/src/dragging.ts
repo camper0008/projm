@@ -1,26 +1,32 @@
 import { Id } from "./models.ts";
 
 interface DraggingOptions {
+    position: [number, number];
     ref: HTMLElement;
     column: Id;
     task: Id;
 }
 
 export class Dragging {
+    private ref: HTMLElement;
     private ghost: HTMLElement;
     public readonly column: Id;
     public readonly task: Id;
 
-    constructor({ ref, column, task }: DraggingOptions) {
-        this.ghost = this.clone(ref);
+    constructor({ position, ref, column, task }: DraggingOptions) {
+        this.ref = ref;
+        this.ref.classList.add("being-dragged");
+        this.ghost = this.clone(this.ref);
         this.column = column;
         this.task = task;
-        document.body.classList.add("ghost-dragging");
+        document.body.classList.add("dragging-object");
+        this.moveGhost(position);
     }
 
     destruct() {
         this.ghost.remove();
-        document.body.classList.remove("ghost-dragging");
+        this.ref.classList.remove("being-dragged");
+        document.body.classList.remove("dragging-object");
     }
 
     moveGhost([x, y]: [number, number]) {

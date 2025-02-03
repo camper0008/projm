@@ -1,7 +1,8 @@
 import { Renderer } from "./render.ts";
-import { DragZone } from "./drag_zone.ts";
+import { DragZone, Zone } from "./drag_zone.ts";
 import { Column, Id, Task, UiEvent } from "./models.ts";
 import { Dragging } from "./dragging.ts";
+import { id } from "./id.ts";
 
 export interface BoardOptions {
     element: HTMLElement;
@@ -34,6 +35,8 @@ export class Board {
     private findAndDeleteTask(options: { task: Id; tasks: Task[] }): boolean {
         const found = options.tasks.findIndex((v) => v.id === options.task);
         if (found !== -1) {
+            /// TODO: add a "Client.removeTask(): Task" call
+
             options.tasks.splice(found, 1);
             return true;
         }
@@ -70,19 +73,76 @@ export class Board {
         this.newSession();
     }
 
+    private findAndMoveTask(zone: Zone) {
+    }
+
+    private dragStartEvent(event: UiEvent & { "type": "drag_start" }) {
+        if (this.dragging !== null) {
+            throw new Error(
+                "unreachable: began new dragging session without cleaning up old dragging session",
+            );
+        }
+        this.dragging = new Dragging({ ...event });
+        this.dragZone.showZones();
+    }
+
+    private findAndAddTask(
+        options: { content: string; task: Id; tasks: Task[] },
+    ): boolean {
+        const found = options.tasks.find((v) => v.id === options.task);
+        if (found !== undefined) {
+            /// TODO: replace with a "Client.createTask(): Task" call
+            found.children.push({
+                id: id(),
+                content: options.content,
+                children: [],
+            });
+            return true;
+        }
+
+        for (const task of options.tasks) {
+            const added = this.findAndDeleteTask({
+                task: options.task,
+                tasks: task.children,
+            });
+            if (added) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private addTaskEvent(event: UiEvent & { "type": "add" }) {
+        const column = this.state.find((v) => v.id === event.column);
+        const content = prompt("Content of task?");
+        if (!content) {
+            return;
+        }
+        if (!column) {
+            throw new Error(
+                "unreachable: cannot add to deleted column",
+            );
+        }
+        const success = this.findAndAddTask({
+            content,
+            task: event.task,
+            tasks: column.children,
+        });
+        if (!success) {
+            throw new Error(
+                "unreachable: cannot add to deleted task",
+            );
+        }
+        this.newSession();
+    }
+
     private handleUiEvent(event: UiEvent) {
         switch (event.type) {
             case "drag_start":
-                if (this.dragging !== null) {
-                    throw new Error(
-                        "unreachable: began new dragging session without cleaning up old dragging session",
-                    );
-                }
-                this.dragging = new Dragging({ ...event });
-                this.dragZone.showZones();
-                break;
+                return this.dragStartEvent(event);
             case "add":
-                break;
+                return this.addTaskEvent(event);
             case "delete":
                 return this.deleteTaskEvent(event);
         }
@@ -94,7 +154,8 @@ export class Board {
         }
 
         /* move dragging object or summin */
-        this.dragZone.closestDragZone(position);
+        const closest = this.dragZone.closestDragZone(position);
+        const pos = this.dragZone.zoneFromId(closest);
 
         this.dragZone.hideZones();
         this.dragging.destruct();

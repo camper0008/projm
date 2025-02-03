@@ -15,11 +15,11 @@ interface RendererOptions {
 
 export class Renderer {
     private eventHandler: UiEventHandler;
-    private drag: DragZone;
+    private dragZone: DragZone;
 
     constructor({ dragZone, eventHandler }: RendererOptions) {
         this.eventHandler = eventHandler;
-        this.drag = dragZone;
+        this.dragZone = dragZone;
     }
 
     private hslFromDepth(depth: number): Color {
@@ -88,12 +88,13 @@ export class Renderer {
             "Rearrange task",
             "grab",
         );
-        dragButton.addEventListener("mousedown", () => {
+        dragButton.addEventListener("mousedown", (event) => {
             this.eventHandler({
                 type: "drag_start",
                 task: task.id,
                 column: column,
                 ref: taskElement,
+                position: [event.clientX, event.clientY],
             });
         });
 
@@ -121,7 +122,7 @@ export class Renderer {
             let positionCounter = 0;
             for (const child of task.children) {
                 taskElement.append(
-                    this.drag.createDragZone(
+                    this.dragZone.createDragZone(
                         { type: "task", id: task.id, column: column },
                         positionCounter,
                     ),
@@ -132,7 +133,7 @@ export class Renderer {
                 positionCounter += 1;
             }
             taskElement.append(
-                this.drag.createDragZone(
+                this.dragZone.createDragZone(
                     { type: "task", id: task.id, column },
                     positionCounter,
                 ),
@@ -155,7 +156,7 @@ export class Renderer {
         let positionCounter = 0;
         for (const task of column.children) {
             columnElement.append(
-                this.drag.createDragZone(
+                this.dragZone.createDragZone(
                     { type: "column", id: column.id },
                     positionCounter,
                 ),
@@ -166,7 +167,7 @@ export class Renderer {
             positionCounter += 1;
         }
         columnElement.append(
-            this.drag.createDragZone(
+            this.dragZone.createDragZone(
                 { type: "column", id: column.id },
                 positionCounter,
             ),

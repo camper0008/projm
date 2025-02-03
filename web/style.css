@@ -6,7 +6,7 @@
     font-family: sans-serif;
 }
 
-body.ghost-dragging {
+body.dragging-object {
     cursor: grabbing;
 }
 
@@ -85,10 +85,9 @@ body.ghost-dragging {
     height: 4px;
     background-color: hsl(193, 100%, 95%);
     opacity: 0.33;
-    margin: 0.5rem 0;
     border-radius: 0.5rem;
-    display: none;
     transition: 200ms opacity;
+    display: none;
 }
 
 .drag-zone.active {
@@ -97,6 +96,10 @@ body.ghost-dragging {
 
 .drag-zone.highlighted {
     opacity: 1.0;
+}
+
+.being-dragged .drag-zone {
+    display: none;
 }
 
 .ghost {
