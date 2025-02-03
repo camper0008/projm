@@ -101,7 +101,8 @@ export class Board {
         }
 
         for (const task of options.tasks) {
-            const added = this.findAndDeleteTask({
+            const added = this.findAndAddTask({
+                content: options.content,
                 task: options.task,
                 tasks: task.children,
             });
@@ -115,14 +116,14 @@ export class Board {
 
     private addTaskEvent(event: UiEvent & { "type": "add" }) {
         const column = this.state.find((v) => v.id === event.column);
-        const content = prompt("Content of task?");
-        if (!content) {
-            return;
-        }
         if (!column) {
             throw new Error(
                 "unreachable: cannot add to deleted column",
             );
+        }
+        const content = prompt("Content of task?");
+        if (!content) {
+            return;
         }
         const success = this.findAndAddTask({
             content,
@@ -138,6 +139,7 @@ export class Board {
     }
 
     private handleUiEvent(event: UiEvent) {
+        console.log("event:", event);
         switch (event.type) {
             case "drag_start":
                 return this.dragStartEvent(event);
