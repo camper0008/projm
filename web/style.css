@@ -51,6 +51,15 @@ body.dragging-object * {
     gap: 0.5rem;
 }
 
+.task-toolbar .task-toolbar-button {
+    transform: scale(0);
+    transition: 150ms transform;
+}
+
+.task-toolbar:hover .task-toolbar-button, .task-toolbar:focus-within .task-toolbar-button {
+    transform: scale(1);
+}
+
 .task-toolbar-button {
     margin: 0;
     background-color: var(--black);
@@ -117,4 +126,9 @@ body.dragging-object * {
 
 .ghost .task-toolbar-button {
     display: none;
+}
+
+.popup {
+    position: absolute;
+    inset: 0;
 }
