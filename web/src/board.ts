@@ -1,6 +1,6 @@
 import { Renderer } from "./render.ts";
 import { DragZone } from "./drag_zone.ts";
-import { Column, UiEvent } from "./models.ts";
+import { Column, Id, Task, UiEvent } from "./models.ts";
 import { Dragging } from "./dragging.ts";
 
 export interface BoardOptions {
@@ -12,12 +12,11 @@ export class Board {
     private element: HTMLElement;
     private state: Column[];
     private dragZone!: DragZone;
-    private dragging: Dragging | null;
+    private dragging!: Dragging | null;
 
     constructor({ element, initialState }: BoardOptions) {
         this.state = initialState;
         this.element = element;
-        this.dragging = null;
         this.newSession();
 
         addEventListener(
@@ -32,6 +31,45 @@ export class Board {
         );
     }
 
+    private findAndDeleteTask(options: { task: Id; tasks: Task[] }): boolean {
+        const found = options.tasks.findIndex((v) => v.id === options.task);
+        if (found !== -1) {
+            options.tasks.splice(found, 1);
+            return true;
+        }
+
+        for (const task of options.tasks) {
+            const deleted = this.findAndDeleteTask({
+                task: options.task,
+                tasks: task.children,
+            });
+            if (deleted) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private deleteTaskEvent(event: UiEvent & { "type": "delete" }) {
+        const column = this.state.find((v) => v.id === event.column);
+        if (!column) {
+            throw new Error(
+                "unreachable: cannot delete already deleted column",
+            );
+        }
+        const success = this.findAndDeleteTask({
+            task: event.task,
+            tasks: column.children,
+        });
+        if (!success) {
+            throw new Error(
+                "unreachable: cannot delete already deleted task",
+            );
+        }
+        this.newSession();
+    }
+
     private handleUiEvent(event: UiEvent) {
         switch (event.type) {
             case "drag_start":
@@ -41,11 +79,12 @@ export class Board {
                     );
                 }
                 this.dragging = new Dragging({ ...event });
+                this.dragZone.showZones();
                 break;
             case "add":
                 break;
             case "delete":
-                break;
+                return this.deleteTaskEvent(event);
         }
     }
 
@@ -54,8 +93,10 @@ export class Board {
             return;
         }
 
+        /* move dragging object or summin */
         this.dragZone.closestDragZone(position);
-        /* move drag or summin */
+
+        this.dragZone.hideZones();
         this.dragging.destruct();
         this.dragging = null;
     }
@@ -70,6 +111,7 @@ export class Board {
     }
 
     private newSession() {
+        this.dragging = null;
         this.dragZone = new DragZone();
         const renderer = new Renderer({
             eventHandler: (event: UiEvent) => this.handleUiEvent(event),

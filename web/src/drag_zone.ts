@@ -55,6 +55,16 @@ export class DragZone {
         return closest[0].id;
     }
 
+    zoneFromId(zoneId: ZoneId): Zone {
+        const zone = this.zones.find((v) => v.id === zoneId);
+        if (!zone) {
+            throw new Error(
+                "unreachable: zoneId is provided by dragZone itself",
+            );
+        }
+        return zone;
+    }
+
     showZones() {
         for (const zone of this.zones) {
             zone.element.classList.add("active");
