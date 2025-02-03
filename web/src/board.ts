@@ -139,7 +139,6 @@ export class Board {
     }
 
     private handleUiEvent(event: UiEvent) {
-        console.log("event:", event);
         switch (event.type) {
             case "drag_start":
                 return this.dragStartEvent(event);
@@ -169,7 +168,6 @@ export class Board {
     }
 
     private mouseMoved(position: [number, number]) {
-        console.log(position);
         if (this.dragging === null) {
             return;
         }
