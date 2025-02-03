@@ -94,7 +94,7 @@ export class Renderer {
                 task: task.id,
                 column: column,
                 ref: taskElement,
-                position: [event.clientX, event.clientY],
+                position: [event.pageX, event.pageY],
             });
         });
 

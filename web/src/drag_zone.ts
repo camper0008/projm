@@ -42,8 +42,8 @@ export class DragZone {
 
     private distance(zone: Zone, [x, y]: [number, number]): number {
         const bounds = zone.element.getBoundingClientRect();
-        const zoneX = bounds.x + bounds.width * 0.5;
-        const zoneY = bounds.y + bounds.height * 0.5;
+        const zoneX = bounds.left + bounds.width * 0.5;
+        const zoneY = bounds.top + bounds.height * 0.5;
         const distance = Math.sqrt(
             (x - zoneX) ** 2 + (y - zoneY) ** 2,
         );

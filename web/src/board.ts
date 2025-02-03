@@ -169,6 +169,7 @@ export class Board {
     }
 
     private mouseMoved(position: [number, number]) {
+        console.log(position);
         if (this.dragging === null) {
             return;
         }
