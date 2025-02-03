@@ -71,10 +71,38 @@ export class Board {
     }
 
     private findAndMoveTask(zone: Zone, oldTask: { column: Id; task: Id }) {
-        const old = this.findTask({
+        const movingTask = this.findTask({
             column: oldTask.column,
             task: oldTask.task,
         }, null);
+        if (!movingTask) {
+            throw new Error(
+                "unreachable: cannot move non-existant task",
+            );
+        }
+        const [task] = movingTask.peers.splice(movingTask.index, 1);
+        if (zone.parent.type === "column") {
+            const parent = this.state.find((v) => v.id === zone.parent.id);
+            if (!parent) {
+                throw new Error(
+                    "unreachable: cannot move into non-existant column",
+                );
+            }
+            parent.children.splice(zone.index, 0, task);
+        } else if (zone.parent.type === "task") {
+            const parent = this.findTask({
+                column: zone.parent.column,
+                task: zone.parent.id,
+            }, null);
+            if (!parent) {
+                throw new Error(
+                    "unreachable: cannot move into non-existant task",
+                );
+            }
+            parent.peers[parent.index].children.splice(zone.index, 0, task);
+        }
+
+        this.newSession();
     }
 
     private dragStartEvent(event: UiEvent & { "type": "drag_start" }) {
@@ -129,14 +157,15 @@ export class Board {
 
         const closest = this.dragZone.closestDragZone(position);
         const zone = this.dragZone.zoneFromId(closest);
-        this.findAndMoveTask(zone, {
-            column: this.dragging.column,
-            task: this.dragging.task,
-        });
-
+        const { column, task } = this.dragging;
         this.dragZone.hideZones();
         this.dragging.destruct();
         this.dragging = null;
+
+        this.findAndMoveTask(zone, {
+            column,
+            task,
+        });
     }
 
     private mouseMoved(position: [number, number]) {
