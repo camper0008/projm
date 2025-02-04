@@ -3,21 +3,25 @@ import { DragZone, Zone } from "./drag_zone.ts";
 import { Column, Id, Task, UiEvent } from "./models.ts";
 import { Dragging } from "./dragging.ts";
 import { Client } from "./client.ts";
+import { Editor } from "./editor.ts";
 
 export interface BoardOptions {
     element: HTMLElement;
     initialState: Column[];
+    editor: Editor;
 }
 
 export class Board {
     private element: HTMLElement;
     private state: Column[];
+    private editor: Editor;
     private dragZone!: DragZone;
     private dragging!: Dragging | null;
 
-    constructor({ element, initialState }: BoardOptions) {
+    constructor({ element, initialState, editor }: BoardOptions) {
         this.state = initialState;
         this.element = element;
+        this.editor = editor;
         this.newSession();
 
         addEventListener(
@@ -125,7 +129,7 @@ export class Board {
                 "unreachable: cannot add to deleted task",
             );
         }
-        const content = prompt("Content of task?");
+        const content = await this.editor.create();
         if (!content) {
             return;
         }
@@ -148,7 +152,7 @@ export class Board {
                 "unreachable: cannot edit deleted task",
             );
         }
-        const content = prompt("New content of task?");
+        const content = await this.editor.edit(task.peers[task.index].content);
         if (!content) {
             return;
         }
