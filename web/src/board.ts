@@ -115,7 +115,27 @@ export class Board {
         this.dragZone.showZones();
     }
 
-    private async addTaskEvent(event: UiEvent & { "type": "add" }) {
+    private async addTaskOnColumn(
+        event: UiEvent & { "type": "add_on_column" },
+    ) {
+        const column = this.state.find((v) => v.id === event.column);
+        if (!column) {
+            throw new Error(
+                "unreachable: cannot add task on a deleted column",
+            );
+        }
+        const content = prompt("Content of task?");
+        if (!content) {
+            return;
+        }
+        const id = await (new Client().addTask());
+        column.children.push({ id, content, children: [] });
+        this.newSession();
+    }
+
+    private async addTaskOnTask(
+        event: UiEvent & { "type": "add_on_task" },
+    ) {
         const task = this.findTask(
             { column: event.column, task: event.task },
             null,
@@ -148,7 +168,10 @@ export class Board {
                 "unreachable: cannot edit deleted task",
             );
         }
-        const content = prompt("New content of task?");
+        const content = prompt(
+            "New content of task?",
+            task.peers[task.index].content,
+        );
         if (!content) {
             return;
         }
@@ -163,8 +186,10 @@ export class Board {
                 return this.dragStartEvent(event);
             case "edit":
                 return this.editTaskEvent(event);
-            case "add":
-                return this.addTaskEvent(event);
+            case "add_on_task":
+                return this.addTaskOnTask(event);
+            case "add_on_column":
+                return this.addTaskOnColumn(event);
             case "delete":
                 return this.deleteTaskEvent(event);
         }

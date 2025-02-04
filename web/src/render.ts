@@ -37,6 +37,21 @@ export class Renderer {
         return { background, color };
     }
 
+    private columnToolbarButton(
+        icon: string,
+        tooltip: string,
+    ): HTMLElement {
+        const button = document.createElement("button");
+        button.classList.add("column-toolbar-button");
+        const iconElement = document.createElement("span");
+        iconElement.classList.add("material-symbols-outlined");
+        iconElement.textContent = icon;
+        button.append(iconElement);
+        button.title = tooltip;
+        button.style.cursor = "pointer";
+        return button;
+    }
+
     private taskToolbarButton(
         icon: string,
         tooltip: string,
@@ -69,7 +84,7 @@ export class Renderer {
         const addButton = this.taskToolbarButton("add_circle", "Add subtask");
         addButton.addEventListener("click", () => {
             this.eventHandler({
-                type: "add",
+                type: "add_on_task",
                 task: task.id,
                 column: column,
             });
@@ -158,10 +173,19 @@ export class Renderer {
     ): HTMLElement {
         const columnElement = document.createElement("div");
         columnElement.classList.add("column");
+        const toolbar = document.createElement("div");
+        toolbar.classList.add("column-toolbar");
         const title = document.createElement("p");
         title.classList.add("column-title");
         title.textContent = column.title;
-        columnElement.append(title);
+
+        const addButton = this.columnToolbarButton("add_circle", "Add task");
+        addButton.addEventListener("click", () => {
+            this.eventHandler({ type: "add_on_column", column: column.id });
+        });
+
+        toolbar.append(title, addButton);
+        columnElement.append(toolbar);
 
         let positionCounter = 0;
         for (const task of column.children) {

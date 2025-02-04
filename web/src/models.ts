@@ -17,9 +17,12 @@ export type UiEvent = {
     column: Id;
     task: Id;
 } | {
-    type: "add";
+    type: "add_on_task";
     column: Id;
     task: Id;
+} | {
+    type: "add_on_column";
+    column: Id;
 } | {
     type: "edit";
     column: Id;
