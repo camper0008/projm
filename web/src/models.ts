@@ -21,6 +21,10 @@ export type UiEvent = {
     column: Id;
     task: Id;
 } | {
+    type: "edit";
+    column: Id;
+    task: Id;
+} | {
     type: "drag_start";
     column: Id;
     task: Id;

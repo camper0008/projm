@@ -56,7 +56,8 @@ body.dragging-object * {
     transition: 150ms transform;
 }
 
-.task-toolbar:hover .task-toolbar-button, .task-toolbar:focus-within .task-toolbar-button {
+.task-toolbar:hover .task-toolbar-button,
+.task-toolbar:focus-within .task-toolbar-button {
     transform: scale(1);
 }
 
@@ -78,8 +79,7 @@ body.dragging-object * {
 }
 
 .task-toolbar-button:hover,
-.task-toolbar-button:focus-within
-{
+.task-toolbar-button:focus-within {
     background-color: var(--white);
     color: var(--black);
 }
@@ -107,7 +107,7 @@ body.dragging-object * {
     opacity: 1.0;
 }
 
-.drag-zone:has( + .being-dragged), .being-dragged + .drag-zone {
+.drag-zone:has(+ .being-dragged), .being-dragged + .drag-zone {
     display: none;
 }
 

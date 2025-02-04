@@ -138,10 +138,31 @@ export class Board {
         this.newSession();
     }
 
+    private async editTaskEvent(event: UiEvent & { "type": "edit" }) {
+        const task = this.findTask(
+            { column: event.column, task: event.task },
+            null,
+        );
+        if (!task) {
+            throw new Error(
+                "unreachable: cannot edit deleted task",
+            );
+        }
+        const content = prompt("New content of task?");
+        if (!content) {
+            return;
+        }
+        await (new Client().editTask());
+        task.peers[task.index].content = content;
+        this.newSession();
+    }
+
     private handleUiEvent(event: UiEvent) {
         switch (event.type) {
             case "drag_start":
                 return this.dragStartEvent(event);
+            case "edit":
+                return this.editTaskEvent(event);
             case "add":
                 return this.addTaskEvent(event);
             case "delete":

@@ -74,6 +74,16 @@ export class Renderer {
                 column: column,
             });
         });
+
+        const editButton = this.taskToolbarButton("edit", "Edit task");
+        editButton.addEventListener("click", () => {
+            this.eventHandler({
+                type: "edit",
+                task: task.id,
+                column: column,
+            });
+        });
+
         const removeButton = this.taskToolbarButton("delete", "Delete task");
         removeButton.addEventListener("click", () => {
             this.eventHandler({
@@ -98,7 +108,7 @@ export class Renderer {
             });
         });
 
-        toolbar.append(addButton, dragButton, removeButton);
+        toolbar.append(addButton, editButton, dragButton, removeButton);
 
         return toolbar;
     }
