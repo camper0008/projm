@@ -1,0 +1,4 @@
+in order of priority
+- ability to save data
+- create on column
+- create, edit, delete columns
