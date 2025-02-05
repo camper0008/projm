@@ -1,110 +1,12 @@
-import { Board, Id, makeBoard } from "bsm";
-import { DragZone } from "./drag_zone.ts";
+import { Board, makeBoard } from "bsm";
+import { DragZoner } from "./drag_zoner.ts";
 import { Renderer } from "./render.ts";
 import { execute } from "bsm";
 import { Action } from "bsm";
-import { UiEvent, UiEventHandler } from "./ui_event.ts";
+import { UiEvent } from "./ui_event.ts";
+import { DragSession } from "./drag_session.ts";
 
-class DragSession {
-    eventHandler: UiEventHandler;
-    dragZone: DragZone;
-    ref: HTMLElement;
-    ghost: HTMLElement;
-
-    task: Id;
-
-    domEventController: AbortController;
-
-    constructor(
-        { dragZone, ref, eventHandler, initialPosition, task }: {
-            ref: HTMLElement;
-            dragZone: DragZone;
-            eventHandler: UiEventHandler;
-            task: Id;
-            initialPosition: [number, number];
-        },
-    ) {
-        this.dragZone = dragZone;
-        this.ref = ref;
-        this.task = task;
-        this.ghost = this.ghostify(initialPosition);
-        this.eventHandler = eventHandler;
-
-        this.dragZone.markHtmlDragStatus(this.ref, { beingDragged: true });
-        this.dragZone.showZones();
-        document.body.classList.add("dragging-object");
-
-        this.domEventController = new AbortController();
-
-        addEventListener(
-            "mousemove",
-            (ev) => this.mouseMove(ev),
-            { signal: this.domEventController.signal },
-        );
-        addEventListener("mouseup", (ev) => this.mouseUp(ev), {
-            signal: this.domEventController.signal,
-        });
-    }
-
-    private ghostify([x, y]: [number, number]) {
-        const ghost = document.createElement("div");
-        ghost.innerHTML = this.ref.innerHTML;
-        ghost.style.top = `${y}px`;
-        ghost.style.left = `${x}px`;
-        ghost.style.backgroundColor = this.ref.style.backgroundColor;
-        ghost.className = this.ref.className;
-        ghost.classList.add("ghost");
-        document.body.append(ghost);
-        return ghost;
-    }
-
-    private mouseUp(event: MouseEvent) {
-        const closest = this.dragZone.closestDragZone(
-            [event.x, event.y],
-            { refCenter: this.refCenter() },
-        );
-        this.dispose();
-        if (closest === null) {
-            return;
-        }
-        const position = this.dragZone.zoneFromId(closest).position;
-        this.eventHandler({
-            tag: "drag_end",
-            position,
-            task: this.task,
-        });
-    }
-    private refCenter(): [number, number] {
-        const refBounds = this.ref.getBoundingClientRect();
-        const refCenter: [number, number] = [
-            refBounds.left + refBounds.width * 0.5,
-            refBounds.top + refBounds.height * 0.5,
-        ];
-        return refCenter;
-    }
-    private mouseMove(event: MouseEvent) {
-        this.ghost.style.top = `${event.y}px`;
-        this.ghost.style.left = `${event.x}px`;
-
-        const closest = this.dragZone.closestDragZone(
-            [event.x, event.y],
-            { refCenter: this.refCenter() },
-        );
-        closest !== null
-            ? this.dragZone.highlightZone(closest)
-            : this.dragZone.removeHighlight();
-    }
-
-    dispose() {
-        this.dragZone.markHtmlDragStatus(this.ref, { beingDragged: false });
-        this.dragZone.hideZones();
-        this.ghost.remove();
-        document.body.classList.remove("dragging-object");
-        this.domEventController.abort();
-    }
-}
-
-function handleEvent(board: Board, dragZone: DragZone, event: UiEvent) {
+function handleEvent(board: Board, dragZoner: DragZoner, event: UiEvent) {
     switch (event.tag) {
         case "add_column": {
             const title = prompt("Title of column?");
@@ -195,21 +97,49 @@ function handleEvent(board: Board, dragZone: DragZone, event: UiEvent) {
             render(board);
             break;
         }
-        case "drag_start": {
+        case "task_drag_start": {
             new DragSession({
-                dragZone,
-                ref: event.ref,
+                dragZoner,
                 eventHandler: (event: UiEvent) =>
-                    handleEvent(board, dragZone, event),
-                initialPosition: event.position,
-                task: event.task,
+                    handleEvent(board, dragZoner, event),
+                subject: {
+                    tag: "task",
+                    ref: event.ref,
+                    initialPosition: event.position,
+                    id: event.task,
+                },
             });
             break;
         }
-        case "drag_end": {
+        case "task_drag_end": {
             const action: Action = {
                 tag: "move_task",
                 src: event.task,
+                dest: event.position,
+            };
+            execute({ board, action });
+            render(board);
+            break;
+        }
+
+        case "column_drag_start": {
+            new DragSession({
+                dragZoner,
+                eventHandler: (event: UiEvent) =>
+                    handleEvent(board, dragZoner, event),
+                subject: {
+                    tag: "column",
+                    ref: event.ref,
+                    initialPosition: event.position,
+                    id: event.column,
+                },
+            });
+            break;
+        }
+        case "column_drag_end": {
+            const action: Action = {
+                tag: "move_column",
+                src: event.column,
                 dest: event.position,
             };
             execute({ board, action });
@@ -220,16 +150,17 @@ function handleEvent(board: Board, dragZone: DragZone, event: UiEvent) {
 }
 
 function render(board: Board) {
-    const dragZone = new DragZone();
+    const dragZoner = new DragZoner();
     const renderer = new Renderer({
-        dragZone,
-        eventHandler: (event) => handleEvent(board, dragZone, event),
+        board,
+        dragZoner,
+        eventHandler: (event) => handleEvent(board, dragZoner, event),
     });
     const element = document.querySelector<HTMLElement>("#board");
     if (!element) {
         throw new Error("unreachable");
     }
-    element.replaceChildren(...renderer.render_content(board));
+    element.replaceChildren(...renderer.render());
 }
 
 function main() {

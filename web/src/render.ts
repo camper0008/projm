@@ -1,4 +1,4 @@
-import { DragZone } from "./drag_zone.ts";
+import { DragZoner } from "./drag_zoner.ts";
 import { Board, Column, Task } from "bsm";
 import { UiEventHandler } from "./ui_event.ts";
 
@@ -10,17 +10,20 @@ interface Color {
 }
 
 interface RendererOptions {
-    dragZone: DragZone;
+    dragZoner: DragZoner;
     eventHandler: UiEventHandler;
+    board: Board;
 }
 
 export class Renderer {
     private eventHandler: UiEventHandler;
-    private dragZone: DragZone;
+    private dragZoner: DragZoner;
+    private board: Board;
 
-    constructor({ dragZone, eventHandler }: RendererOptions) {
+    constructor({ dragZoner, eventHandler, board }: RendererOptions) {
         this.eventHandler = eventHandler;
-        this.dragZone = dragZone;
+        this.dragZoner = dragZoner;
+        this.board = board;
     }
 
     private hslFromDepth(depth: number): Color {
@@ -56,6 +59,7 @@ export class Renderer {
     private columnToolbarButton(
         icon: string,
         tooltip: string,
+        cursor: string = "pointer",
     ): HTMLElement {
         const button = document.createElement("button");
         button.classList.add("column-toolbar-button");
@@ -64,7 +68,7 @@ export class Renderer {
         iconElement.textContent = icon;
         button.append(iconElement);
         button.title = tooltip;
-        button.style.cursor = "pointer";
+        button.style.cursor = cursor;
         return button;
     }
 
@@ -129,7 +133,7 @@ export class Renderer {
 
         dragButton.addEventListener("mousedown", (event) => {
             this.eventHandler({
-                tag: "drag_start",
+                tag: "task_drag_start",
                 task: task.id,
                 ref: taskElement,
                 position: [event.pageX, event.pageY],
@@ -156,14 +160,18 @@ export class Renderer {
         taskElement.style.color = colors.color;
 
         taskElement.append(this.taskToolbar(task, taskElement));
-        taskElement.append(this.dragZone.createDragZone(
-            { tag: "first_child_of", parent: task.id },
-        ));
+        taskElement.append(
+            this.dragZoner.createDragZone({
+                tag: "task",
+                position: { tag: "first_child_of", parent: task.id },
+            }),
+        );
         taskElement.append(...this.task(task.child, depth + 1, []));
 
-        const dragAfter = this.dragZone.createDragZone(
-            { tag: "after", sibling: task.id },
-        );
+        const dragAfter = this.dragZoner.createDragZone({
+            tag: "task",
+            position: { tag: "after", sibling: task.id },
+        });
 
         return this.task(task.after, depth, [
             ...siblings,
@@ -201,6 +209,21 @@ export class Renderer {
             });
         });
 
+        const dragButton = this.columnToolbarButton(
+            "drag_indicator",
+            "Rearrange column",
+            "grab",
+        );
+
+        dragButton.addEventListener("mousedown", (event) => {
+            this.eventHandler({
+                tag: "column_drag_start",
+                column: column.id,
+                ref: columnElement,
+                position: [event.pageX, event.pageY],
+            });
+        });
+
         const removeButton = this.columnToolbarButton(
             "delete",
             "Remove column",
@@ -209,13 +232,26 @@ export class Renderer {
             this.eventHandler({ tag: "remove_column", target: column.id });
         });
 
-        toolbar.append(title, addButton, editButton, removeButton);
+        toolbar.append(title, addButton, editButton, dragButton, removeButton);
         columnElement.append(toolbar);
-        columnElement.append(this.dragZone.createDragZone(
-            { tag: "first_child_of", parent: column.id },
-        ));
+        columnElement.append(
+            this.dragZoner.createDragZone({
+                tag: "task",
+                position: { tag: "first_child_of", parent: column.id },
+            }),
+        );
         columnElement.append(...this.task(column.child));
-        return this.column(column.after, [...siblings, columnElement]);
+
+        const afterDragZone = this.dragZoner.createDragZone({
+            tag: "column",
+            position: { tag: "after", sibling: column.id },
+        });
+
+        return this.column(column.after, [
+            ...siblings,
+            columnElement,
+            afterDragZone,
+        ]);
     }
 
     private boardToolbar(
@@ -256,13 +292,15 @@ export class Renderer {
         return toolbar;
     }
 
-    render_content(
-        board: Board,
-    ) {
-        const toolbar = this.boardToolbar(board);
+    render(): HTMLElement[] {
+        const toolbar = this.boardToolbar(this.board);
+        const firstChildDragZone = this.dragZoner.createDragZone({
+            tag: "column",
+            position: { tag: "first_child" },
+        });
         const content = document.createElement("div");
         content.classList.add("board-content");
-        content.append(...this.column(board.child));
+        content.append(firstChildDragZone, ...this.column(this.board.child));
         return [toolbar, content];
     }
 }

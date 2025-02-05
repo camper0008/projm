@@ -128,13 +128,20 @@ body.dragging-object * {
 }
 
 .drag-zone {
-    height: 4px;
     background-color: hsl(193, 100%, 95%);
     opacity: 0.33;
     border-radius: 0.5rem;
     transition: 200ms opacity;
     display: none;
 }
+
+.drag-zone[data-tag="task"] {
+    height: 4px;
+} 
+
+.drag-zone[data-tag="column"] {
+    width: 4px;
+} 
 
 .drag-zone.active {
     display: unset;

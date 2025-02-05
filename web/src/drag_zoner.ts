@@ -1,25 +1,48 @@
-import { TaskPosition } from "bsm";
+import { ColumnPosition, TaskPosition } from "bsm";
 
-export type ZoneId = number;
+export type ZoneId = { inner: number };
 
-export interface Zone {
-    id: ZoneId;
-    element: HTMLElement;
-    position: TaskPosition;
-}
+export type Zone =
+    | {
+        id: ZoneId;
+        element: HTMLElement;
+        tag: "task";
+        position: TaskPosition;
+    }
+    | {
+        id: ZoneId;
+        element: HTMLElement;
+        tag: "column";
+        position: ColumnPosition;
+    };
 
-export class DragZone {
-    private idCounter: ZoneId = 0;
+type CreateDragZone =
+    | { tag: "task"; position: TaskPosition }
+    | { tag: "column"; position: ColumnPosition };
+
+export class DragZoner {
+    private idCounter: number = 0;
     private zones: Zone[] = [];
 
-    createDragZone(position: TaskPosition): HTMLElement {
+    createDragZone({ tag, position }: CreateDragZone): HTMLElement {
         const zone = document.createElement("div");
+        zone.dataset["tag"] = tag;
         zone.classList.add("drag-zone");
-        this.zones.push({
-            element: zone,
-            position,
-            id: this.idCounter,
-        });
+        if (tag === "task") {
+            this.zones.push({
+                id: { inner: this.idCounter },
+                tag,
+                element: zone,
+                position,
+            });
+        } else {
+            this.zones.push({
+                id: { inner: this.idCounter },
+                tag,
+                element: zone,
+                position,
+            });
+        }
         this.idCounter += 1;
         return zone;
     }
@@ -69,9 +92,7 @@ export class DragZone {
             distB - distA
         ).pop();
         if (closest === undefined) {
-            throw new Error(
-                "unreachable: tried to get closest drag zone with no drag zones created",
-            );
+            return null;
         }
         const distanceToRefCenter = this.distance([x, y], refCenter);
         if (distanceToRefCenter < closest[1]) {
@@ -90,22 +111,20 @@ export class DragZone {
         return zone;
     }
 
-    showZones() {
-        for (const zone of this.zones) {
-            zone.element.classList.add("active");
-        }
+    showZones(tag: Zone["tag"]) {
+        this.zones
+            .filter((zone) => zone.tag === tag)
+            .forEach((zone) => zone.element.classList.add("active"));
     }
 
     hideZones() {
-        for (const zone of this.zones) {
-            zone.element.classList.remove("active");
-        }
+        this.zones
+            .forEach((zone) => zone.element.classList.remove("active"));
     }
 
-    removeHighlight() {
-        for (const zone of this.zones) {
-            zone.element.classList.remove("highlighted");
-        }
+    removeHighlights() {
+        this.zones
+            .forEach((zone) => zone.element.classList.remove("highlighted"));
     }
 
     highlightZone(id: ZoneId) {
