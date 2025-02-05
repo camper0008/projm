@@ -1,4 +1,4 @@
-import { Board, makeBoard } from "bsm";
+import { Board, Id, makeBoard } from "bsm";
 import { DragZone } from "./drag_zone.ts";
 import { Renderer } from "./render.ts";
 import { execute } from "bsm";
@@ -11,18 +11,22 @@ class DragSession {
     ref: HTMLElement;
     ghost: HTMLElement;
 
+    task: Id;
+
     domEventController: AbortController;
 
     constructor(
-        { dragZone, ref, eventHandler, initialPosition }: {
+        { dragZone, ref, eventHandler, initialPosition, task }: {
             ref: HTMLElement;
             dragZone: DragZone;
             eventHandler: UiEventHandler;
+            task: Id;
             initialPosition: [number, number];
         },
     ) {
         this.dragZone = dragZone;
         this.ref = ref;
+        this.task = task;
         this.ghost = this.ghostify(initialPosition);
         this.eventHandler = eventHandler;
 
@@ -60,6 +64,15 @@ class DragSession {
             { refCenter: this.refCenter() },
         );
         this.dispose();
+        if (!closest) {
+            return;
+        }
+        const position = this.dragZone.zoneFromId(closest).position;
+        this.eventHandler({
+            tag: "drag_end",
+            position,
+            task: this.task,
+        });
     }
     private refCenter(): [number, number] {
         const refBounds = this.ref.getBoundingClientRect();
@@ -70,7 +83,6 @@ class DragSession {
         return refCenter;
     }
     private mouseMove(event: MouseEvent) {
-        console.log("dragging!");
         this.ghost.style.top = `${event.y}px`;
         this.ghost.style.left = `${event.x}px`;
 
@@ -184,16 +196,24 @@ function handleEvent(board: Board, dragZone: DragZone, event: UiEvent) {
             break;
         }
         case "drag_start": {
-            const dragging = new DragSession({
+            new DragSession({
                 dragZone,
                 ref: event.ref,
                 eventHandler: (event: UiEvent) =>
                     handleEvent(board, dragZone, event),
                 initialPosition: event.position,
+                task: event.task,
             });
             break;
         }
         case "drag_end": {
+            const action: Action = {
+                tag: "move_task",
+                src: event.task,
+                dest: event.position,
+            };
+            execute({ board, action });
+            render(board);
             break;
         }
     }
