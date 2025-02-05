@@ -1,34 +1,148 @@
 import { Application, Router } from "@oak/oak";
 import { oakCors } from "cors";
-import { BoardState, Id } from "./board.ts";
+import { MemDb } from "./mem_db.ts";
+import { BoardData, BoardPreview, Db, Id } from "./db.ts";
+import { err, Result } from "@result/result";
+import * as bsm from "bsm";
 
-function newId() {
-    return crypto.randomUUID();
-}
-
-type UpdateBoardRequest = {
-    id: Id;
-    board: BoardState;
-    lastUpdate: string;
+type CreateBoardRequest = {
+    title: string;
 };
 
+type DeleteBoardRequest = {
+    board: Id;
+};
+
+type BoardRequest = {
+    board: Id;
+};
+
+type ExecuteActionRequest = {
+    board: Id;
+    hash: string;
+    action: bsm.Action;
+};
+
+function createBoard(
+    db: Db,
+    req: CreateBoardRequest,
+): Result<BoardPreview, string> {
+    return db.createBoard(req.title);
+}
+
+function boards(
+    db: Db,
+): BoardPreview[] {
+    return db.boards();
+}
+
+function deleteBoard(
+    db: Db,
+    req: DeleteBoardRequest,
+): Result<void, string> {
+    return db.deleteBoard(req.board);
+}
+
+function board(
+    db: Db,
+    req: BoardRequest,
+): Result<BoardData, string> {
+    return db.retrieveBoardData(req.board);
+}
+
+async function executeAction(
+    db: Db,
+    req: ExecuteActionRequest,
+): Promise<Result<void, string>> {
+    const { isBreak, value: board } = db.retrieveBoardData(req.board).branch();
+    if (isBreak) return board;
+
+    const newHash = await bsm.hashBoard(board.initialTitle, [
+        ...board.actions,
+        req.action,
+    ]);
+
+    if (newHash !== req.hash) {
+        return err("invalid hash");
+    }
+
+    return db.commitAction(req.board, req.action);
+}
+
 async function main() {
-    const boards = [{
-        id: newId(),
-        updatedAt: new Date().toISOString(),
-        state: { title: "Test board", content: [] },
-    }];
     const router = new Router();
 
-    router.get("/boards", () => {
-        return boards.map(({ id, state }) => ({ id: id, title: state.title }));
-    });
-
-    router.post("/update_board", (ctx) => {
-        return boards.map(({ id, state }) => ({ id: id, title: state.title }));
-    });
+    const db: Db = new MemDb();
 
     const app = new Application();
+    router.post("/create_board", async (ctx) => {
+        const req: CreateBoardRequest = await ctx.request.body
+            .json();
+        if (!req.title) {
+            ctx.response.body = { ok: false, message: "invalid request body" };
+            return;
+        }
+
+        const res = (createBoard(db, req)).match(
+            (board) => ({ ok: true, message: "success", board }),
+            (err) => ({ ok: false, message: err }),
+        );
+        ctx.response.body = res;
+    });
+
+    router.post("/boards", (ctx) => {
+        const res = boards(db);
+        ctx.response.body = {
+            ok: true,
+            message: "success",
+            boards: res,
+        };
+    });
+
+    router.post("/board", async (ctx) => {
+        const req: BoardRequest = await ctx.request.body
+            .json();
+        if (!req.board) {
+            ctx.response.body = { ok: false, message: "invalid request body" };
+            return;
+        }
+
+        const res = (board(db, req)).match(
+            (board) => ({ ok: true, message: "success", board }),
+            (err) => ({ ok: false, message: err }),
+        );
+        ctx.response.body = res;
+    });
+
+    router.post("/execute_action", async (ctx) => {
+        const req: ExecuteActionRequest = await ctx.request.body
+            .json();
+        if (!req.board || !req.action) {
+            ctx.response.body = { ok: false, message: "invalid request body" };
+            return;
+        }
+
+        const res = (await executeAction(db, req)).match(
+            (_ok) => ({ ok: true, message: "success" }),
+            (err) => ({ ok: false, message: err }),
+        );
+        ctx.response.body = res;
+    });
+
+    router.post("/delete_board", async (ctx) => {
+        const req: DeleteBoardRequest = await ctx.request.body
+            .json();
+        if (!req.board) {
+            ctx.response.body = { ok: false, message: "invalid request body" };
+            return;
+        }
+
+        const res = (deleteBoard(db, req)).match(
+            (_ok) => ({ ok: true, message: "success" }),
+            (err) => ({ ok: false, message: err }),
+        );
+        ctx.response.body = res;
+    });
     app.use(oakCors());
     app.use(router.routes());
     app.use(router.allowedMethods());

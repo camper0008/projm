@@ -83,6 +83,44 @@ export function makeBoard(title: string): Board {
     return board;
 }
 
+function encode(v: string): Uint8Array {
+    return new TextEncoder().encode(v);
+}
+
+function decodeIntoHex(v: Uint8Array): string {
+    return Array.from(v)
+        .map((b: number) => b.toString(16).padStart(2, "0"))
+        .join("");
+}
+
+async function hash(values: number[]): Promise<ArrayBuffer> {
+    return await crypto.subtle.digest("SHA-1", new Uint8Array(values));
+}
+
+async function hashAction(
+    action: Action,
+    parent: Uint8Array,
+): Promise<Uint8Array> {
+    const content = encode(JSON.stringify(action));
+    return await hash([...parent, ...content]).then((v) => new Uint8Array(v));
+}
+
+export async function hashBoard(
+    initialTitle: string,
+    actions: Action[],
+): Promise<string> {
+    if (actions.length === 0) {
+        return await hash([...encode(initialTitle)])
+            .then((hash) => new Uint8Array(hash))
+            .then(decodeIntoHex);
+    }
+
+    return await actions.reduce(
+        (acc, action) => acc.then((parent) => hashAction(action, parent)),
+        Promise.resolve(encode(initialTitle)),
+    ).then(decodeIntoHex);
+}
+
 export function execute({ board, action }: { board: Board; action: Action }) {
     switch (action.tag) {
         case "add_column": {
