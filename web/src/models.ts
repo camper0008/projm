@@ -1,38 +1,17 @@
-export type Id = string;
+import { Id } from "bsm";
 
-export interface Column {
-    id: Id;
-    title: string;
-    children: Task[];
-}
-
-export interface Task {
-    id: Id;
-    content: string;
-    children: Task[];
-}
-
-export type UiEvent = {
-    type: "delete";
-    column: Id;
-    task: Id;
-} | {
-    type: "add_on_task";
-    column: Id;
-    task: Id;
-} | {
-    type: "add_on_column";
-    column: Id;
-} | {
-    type: "edit";
-    column: Id;
-    task: Id;
-} | {
-    type: "drag_start";
-    column: Id;
-    task: Id;
-    ref: HTMLElement;
-    position: [number, number];
-};
+export type UiEvent =
+    | { tag: "add_task"; parent: Id }
+    | { tag: "remove_column"; target: Id }
+    | { tag: "remove_task"; target: Id }
+    | { tag: "edit_task"; target: Id }
+    | { tag: "edit_column"; target: Id }
+    | {
+        tag: "drag_start";
+        task: Id;
+        ref: HTMLElement;
+        position: [number, number];
+    };
 
 export type UiEventHandler = (event: UiEvent) => void;
+

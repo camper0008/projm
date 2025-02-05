@@ -81,18 +81,20 @@ export class Board {
             );
         }
         const [task] = movingTask.peers.splice(movingTask.index, 1);
-        if (zone.parent.type === "column") {
-            const parent = this.state.find((v) => v.id === zone.parent.id);
+        if (zone.position.type === "column") {
+            const parent = this.state.find((v) =>
+                v.id === zone.position.parent
+            );
             if (!parent) {
                 throw new Error(
                     "unreachable: cannot move into non-existant column",
                 );
             }
             parent.children.splice(zone.index, 0, task);
-        } else if (zone.parent.type === "task") {
+        } else if (zone.position.type === "task") {
             const parent = this.findTask({
-                column: zone.parent.column,
-                task: zone.parent.id,
+                column: zone.position.column,
+                task: zone.position.parent,
             }, null);
             if (!parent) {
                 throw new Error(
@@ -181,7 +183,7 @@ export class Board {
     }
 
     private handleUiEvent(event: UiEvent) {
-        switch (event.type) {
+        switch (event.tag) {
             case "drag_start":
                 return this.dragStartEvent(event);
             case "edit":

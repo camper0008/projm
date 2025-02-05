@@ -1,20 +1,11 @@
-import { Id } from "./models.ts";
+import { Id, TaskPosition } from "bsm";
 
 export type ZoneId = number;
-
-export type DragParent = {
-    type: "column";
-    id: Id;
-} | {
-    type: "task";
-    column: Id;
-    id: Id;
-};
 
 export interface Zone {
     id: ZoneId;
     element: HTMLElement;
-    parent: DragParent;
+    position: TaskPosition;
     index: number;
 }
 
@@ -22,12 +13,12 @@ export class DragZone {
     private idCounter: ZoneId = 0;
     private zones: Zone[] = [];
 
-    createDragZone(parent: DragParent, index: number): HTMLElement {
+    createDragZone(position: TaskPosition, index: number): HTMLElement {
         const zone = document.createElement("div");
         zone.classList.add("drag-zone");
         this.zones.push({
             element: zone,
-            parent,
+            position,
             index: index,
             id: this.idCounter,
         });

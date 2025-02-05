@@ -1,5 +1,6 @@
 import { DragZone } from "./drag_zone.ts";
-import { Column, Id, Task, UiEventHandler } from "./models.ts";
+import { UiEventHandler } from "./models.ts";
+import { Board, Column, Id, Task } from "bsm";
 
 type HSL = `hsl(${number}, ${number}%, ${number}%)`;
 
@@ -69,7 +70,6 @@ export class Renderer {
     }
 
     private taskToolbar(
-        column: Id,
         task: Task,
         taskElement: HTMLElement,
     ): HTMLElement {
@@ -84,27 +84,24 @@ export class Renderer {
         const addButton = this.taskToolbarButton("add_circle", "Add subtask");
         addButton.addEventListener("click", () => {
             this.eventHandler({
-                type: "add_on_task",
-                task: task.id,
-                column: column,
+                tag: "add_task",
+                parent: task.id,
             });
         });
 
         const editButton = this.taskToolbarButton("edit", "Edit task");
         editButton.addEventListener("click", () => {
             this.eventHandler({
-                type: "edit",
-                task: task.id,
-                column: column,
+                tag: "edit_task",
+                target: task.id,
             });
         });
 
         const removeButton = this.taskToolbarButton("delete", "Delete task");
         removeButton.addEventListener("click", () => {
             this.eventHandler({
-                type: "delete",
-                task: task.id,
-                column: column,
+                tag: "remove_task",
+                target: task.id,
             });
         });
 
@@ -113,11 +110,11 @@ export class Renderer {
             "Rearrange task",
             "grab",
         );
+
         dragButton.addEventListener("mousedown", (event) => {
             this.eventHandler({
-                type: "drag_start",
+                tag: "drag_start",
                 task: task.id,
-                column: column,
                 ref: taskElement,
                 position: [event.pageX, event.pageY],
             });
@@ -129,26 +126,27 @@ export class Renderer {
     }
 
     private task(
-        task: Task,
-        column: Id,
+        prev: HTMLElement[],
+        task: Task | null,
         depth: number,
-    ): HTMLElement {
+    ): HTMLElement[] {
+        if (!task) {
+            return prev;
+        }
         const taskElement = document.createElement("div");
         taskElement.classList.add("task");
-        taskElement.dataset["id"] = task.id.toString();
-        taskElement.dataset["depth"] = depth.toString();
         const colors = this.hslFromDepth(depth);
         taskElement.style.backgroundColor = colors.background;
         taskElement.style.color = colors.color;
 
-        taskElement.append(this.taskToolbar(column, task, taskElement));
+        taskElement.append(this.taskToolbar(task, taskElement));
 
         {
             let positionCounter = 0;
             for (const child of task.children) {
                 taskElement.append(
                     this.dragZone.createDragZone(
-                        { type: "task", id: task.id, column: column },
+                        { type: "task", parent: task.id, column: column },
                         positionCounter,
                     ),
                 );
@@ -159,7 +157,7 @@ export class Renderer {
             }
             taskElement.append(
                 this.dragZone.createDragZone(
-                    { type: "task", id: task.id, column },
+                    { type: "task", parent: task.id, column },
                     positionCounter,
                 ),
             );
@@ -169,8 +167,12 @@ export class Renderer {
     }
 
     private column(
-        column: Column,
-    ): HTMLElement {
+        prev: HTMLElement[],
+        column: Column | null,
+    ): HTMLElement[] {
+        if (!column) {
+            return prev;
+        }
         const columnElement = document.createElement("div");
         columnElement.classList.add("column");
         const toolbar = document.createElement("div");
@@ -181,17 +183,21 @@ export class Renderer {
 
         const addButton = this.columnToolbarButton("add_circle", "Add task");
         addButton.addEventListener("click", () => {
-            this.eventHandler({ type: "add_on_column", column: column.id });
+            this.eventHandler({ tag: "add_task", parent: column.id });
         });
 
         toolbar.append(title, addButton);
         columnElement.append(toolbar);
 
+        const tasks = this.task([], column.child, 0);
+        columnElement.append(this.dragZone.createDragZone(
+            { tag: "first_child_of", parent: column.id },
+        ));
         let positionCounter = 0;
         for (const task of column.children) {
             columnElement.append(
                 this.dragZone.createDragZone(
-                    { type: "column", id: column.id },
+                    { tag: "column", parent: column.id },
                     positionCounter,
                 ),
             );
@@ -202,16 +208,16 @@ export class Renderer {
         }
         columnElement.append(
             this.dragZone.createDragZone(
-                { type: "column", id: column.id },
+                { tag: "column", parent: column.id },
                 positionCounter,
             ),
         );
-        return columnElement;
+        this.column([...prev, columnElement], column.after);
     }
 
     render(
-        columns: Column[],
+        board: Board,
     ): HTMLElement[] {
-        return columns.map((column) => this.column(column));
+        return this.column([], board.child);
     }
 }
