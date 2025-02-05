@@ -1,6 +1,6 @@
 import { DragZone } from "./drag_zone.ts";
-import { UiEventHandler } from "./models.ts";
-import { Board, Column, Id, Task } from "bsm";
+import { Board, Column, Task } from "bsm";
+import { UiEventHandler } from "./ui_event.ts";
 
 type HSL = `hsl(${number}, ${number}%, ${number}%)`;
 
@@ -36,6 +36,21 @@ export class Renderer {
         const color: HSL = `hsl(${fgHue}, ${fgSaturation}%, ${fgLightness}%)`;
 
         return { background, color };
+    }
+
+    private boardToolbarButton(
+        icon: string,
+        tooltip: string,
+    ): HTMLElement {
+        const button = document.createElement("button");
+        button.classList.add("board-toolbar-button");
+        const iconElement = document.createElement("span");
+        iconElement.classList.add("material-symbols-outlined");
+        iconElement.textContent = icon;
+        button.append(iconElement);
+        button.title = tooltip;
+        button.style.cursor = "pointer";
+        return button;
     }
 
     private columnToolbarButton(
@@ -94,6 +109,7 @@ export class Renderer {
             this.eventHandler({
                 tag: "edit_task",
                 target: task.id,
+                oldContent: task.content,
             });
         });
 
@@ -126,12 +142,12 @@ export class Renderer {
     }
 
     private task(
-        prev: HTMLElement[],
         task: Task | null,
-        depth: number,
+        depth: number = 0,
+        siblings: HTMLElement[] = [],
     ): HTMLElement[] {
         if (!task) {
-            return prev;
+            return siblings;
         }
         const taskElement = document.createElement("div");
         taskElement.classList.add("task");
@@ -140,38 +156,28 @@ export class Renderer {
         taskElement.style.color = colors.color;
 
         taskElement.append(this.taskToolbar(task, taskElement));
+        taskElement.append(this.dragZone.createDragZone(
+            { tag: "first_child_of", parent: task.id },
+        ));
+        taskElement.append(...this.task(task.child, depth + 1, []));
 
-        {
-            let positionCounter = 0;
-            for (const child of task.children) {
-                taskElement.append(
-                    this.dragZone.createDragZone(
-                        { type: "task", parent: task.id, column: column },
-                        positionCounter,
-                    ),
-                );
-                taskElement.append(
-                    this.task(child, column, depth + 1),
-                );
-                positionCounter += 1;
-            }
-            taskElement.append(
-                this.dragZone.createDragZone(
-                    { type: "task", parent: task.id, column },
-                    positionCounter,
-                ),
-            );
-        }
+        const dragAfter = this.dragZone.createDragZone(
+            { tag: "after", sibling: task.id },
+        );
 
-        return taskElement;
+        return this.task(task.after, depth, [
+            ...siblings,
+            taskElement,
+            dragAfter,
+        ]);
     }
 
     private column(
-        prev: HTMLElement[],
         column: Column | null,
+        siblings: HTMLElement[] = [],
     ): HTMLElement[] {
         if (!column) {
-            return prev;
+            return siblings;
         }
         const columnElement = document.createElement("div");
         columnElement.classList.add("column");
@@ -186,38 +192,77 @@ export class Renderer {
             this.eventHandler({ tag: "add_task", parent: column.id });
         });
 
-        toolbar.append(title, addButton);
-        columnElement.append(toolbar);
+        const editButton = this.columnToolbarButton("edit", "Edit column");
+        editButton.addEventListener("click", () => {
+            this.eventHandler({
+                tag: "edit_column",
+                target: column.id,
+                oldTitle: column.title,
+            });
+        });
 
-        const tasks = this.task([], column.child, 0);
+        const removeButton = this.columnToolbarButton(
+            "delete",
+            "Remove column",
+        );
+        removeButton.addEventListener("click", () => {
+            this.eventHandler({ tag: "remove_column", target: column.id });
+        });
+
+        toolbar.append(title, addButton, editButton, removeButton);
+        columnElement.append(toolbar);
         columnElement.append(this.dragZone.createDragZone(
             { tag: "first_child_of", parent: column.id },
         ));
-        let positionCounter = 0;
-        for (const task of column.children) {
-            columnElement.append(
-                this.dragZone.createDragZone(
-                    { tag: "column", parent: column.id },
-                    positionCounter,
-                ),
-            );
-            columnElement.append(
-                this.task(task, column.id, 0),
-            );
-            positionCounter += 1;
-        }
-        columnElement.append(
-            this.dragZone.createDragZone(
-                { tag: "column", parent: column.id },
-                positionCounter,
-            ),
-        );
-        this.column([...prev, columnElement], column.after);
+        columnElement.append(...this.task(column.child));
+        return this.column(column.after, [...siblings, columnElement]);
     }
 
-    render(
+    private boardToolbar(
         board: Board,
-    ): HTMLElement[] {
-        return this.column([], board.child);
+    ): HTMLElement {
+        const toolbar = document.createElement("div");
+        toolbar.classList.add("board-toolbar");
+
+        const title = document.createElement("p");
+        title.classList.add("board-title");
+        title.innerText = board.title;
+        toolbar.append(title);
+
+        const addButton = this.boardToolbarButton("add_circle", "Add column");
+        addButton.addEventListener("click", () => {
+            this.eventHandler({
+                tag: "add_column",
+            });
+        });
+
+        const editButton = this.boardToolbarButton("edit", "Edit board");
+        editButton.addEventListener("click", () => {
+            this.eventHandler({
+                tag: "edit_board",
+                oldTitle: board.title,
+            });
+        });
+
+        const removeButton = this.boardToolbarButton("delete", "Delete board");
+        removeButton.addEventListener("click", () => {
+            this.eventHandler({
+                tag: "remove_board",
+            });
+        });
+
+        toolbar.append(addButton, editButton, removeButton);
+
+        return toolbar;
+    }
+
+    render_content(
+        board: Board,
+    ) {
+        const toolbar = this.boardToolbar(board);
+        const content = document.createElement("div");
+        content.classList.add("board-content");
+        content.append(...this.column(board.child));
+        return [toolbar, content];
     }
 }

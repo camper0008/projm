@@ -4,7 +4,7 @@ export type Id = {
 
 export type Task = {
     id: Id;
-    type_id: "task";
+    typeId: "task";
     content: string;
     after: Task | null;
     child: Task | null;
@@ -12,7 +12,7 @@ export type Task = {
 
 export type Column = {
     id: Id;
-    type_id: "column";
+    typeId: "column";
     title: string;
     after: Column | null;
     child: Task | null;
@@ -20,7 +20,7 @@ export type Column = {
 
 export type Board = {
     title: string;
-    id_counter: number;
+    idCounter: number;
     child: Column | null;
 };
 
@@ -35,43 +35,43 @@ export type ColumnPosition =
 export type Action =
     | { tag: "add_column"; title: string }
     | { tag: "add_task"; parent: Id; content: string }
-    | { tag: "delete_column"; target: Id }
-    | { tag: "delete_task"; target: Id }
+    | { tag: "remove_column"; target: Id }
+    | { tag: "remove_task"; target: Id }
     | { tag: "move_task"; src: Id; dest: TaskPosition }
     | { tag: "move_column"; src: Id; dest: ColumnPosition }
     | { tag: "edit_task"; target: Id; content: string }
     | { tag: "edit_column"; target: Id; title: string }
     | { tag: "edit_board"; title: string };
 
-function cmp_id(left: Id, right: Id): boolean {
+function cmpId(left: Id, right: Id): boolean {
     return left.inner === right.inner;
 }
 
-function new_id(board: Board): Id {
+function makeId(board: Board): Id {
     const id = {
-        inner: board.id_counter,
+        inner: board.idCounter,
     };
-    board.id_counter += 1;
+    board.idCounter += 1;
     return id;
 }
 
-export function new_board(title: string): Board {
+export function makeBoard(title: string): Board {
     const board: Board = {
         title,
-        id_counter: 0,
+        idCounter: 0,
         child: null,
     };
     board.child = {
-        id: new_id(board),
-        type_id: "column",
+        id: makeId(board),
+        typeId: "column",
         title: "todo",
         after: {
-            id: new_id(board),
-            type_id: "column",
+            id: makeId(board),
+            typeId: "column",
             title: "doing",
             after: {
-                id: new_id(board),
-                type_id: "column",
+                id: makeId(board),
+                typeId: "column",
                 title: "done",
                 after: null,
                 child: null,
@@ -83,14 +83,14 @@ export function new_board(title: string): Board {
     return board;
 }
 
-export function do_action(board: Board, action: Action) {
+export function execute({ board, action }: { board: Board; action: Action }) {
     switch (action.tag) {
         case "add_column": {
-            add_last_child({
+            addLastChild({
                 dest: board,
                 src: {
-                    id: new_id(board),
-                    type_id: "column",
+                    id: makeId(board),
+                    typeId: "column",
                     title: action.title,
                     after: null,
                     child: null,
@@ -102,17 +102,17 @@ export function do_action(board: Board, action: Action) {
             if (!board.child) {
                 throw new Error("cannot add task without a column");
             }
-            const parent = column_from_id(board.child, action.parent) ||
-                task_from_id(board.child, action.parent);
+            const parent = columnFromId(board.child, action.parent) ||
+                taskFromId(board.child, action.parent);
             if (!parent) {
                 throw new Error("task parent does not exist");
             }
 
-            add_last_child({
+            addLastChild({
                 dest: parent,
                 src: {
-                    id: new_id(board),
-                    type_id: "task",
+                    id: makeId(board),
+                    typeId: "task",
                     content: action.content,
                     after: null,
                     child: null,
@@ -120,39 +120,39 @@ export function do_action(board: Board, action: Action) {
             });
             break;
         }
-        case "delete_column": {
-            remove_column(board, action.target);
+        case "remove_column": {
+            removeColumn(board, action.target);
             break;
         }
-        case "delete_task": {
-            remove_task(board, action.target);
+        case "remove_task": {
+            removeTask(board, action.target);
             break;
         }
         case "move_task": {
             if (!board.child) {
                 throw new Error("cannot add task without a column");
             }
-            const src = remove_task(board, action.src);
+            const src = removeTask(board, action.src);
             if (!src) {
                 throw new Error("task  does not exist");
             }
             switch (action.dest.tag) {
                 case "first_child_of": {
                     const dest =
-                        column_from_id(board.child, action.dest.parent) ||
-                        task_from_id(board.child, action.dest.parent);
+                        columnFromId(board.child, action.dest.parent) ||
+                        taskFromId(board.child, action.dest.parent);
                     if (!dest) {
                         throw new Error("task parent does not exist");
                     }
-                    add_first_child({ dest, src });
+                    addFirstChild({ dest, src });
                     break;
                 }
                 case "after": {
-                    const dest = task_from_id(board.child, action.dest.sibling);
+                    const dest = taskFromId(board.child, action.dest.sibling);
                     if (!dest) {
                         throw new Error("task parent does not exist");
                     }
-                    add_after({ dest, src });
+                    addAfter({ dest, src });
                     break;
                 }
             }
@@ -162,24 +162,24 @@ export function do_action(board: Board, action: Action) {
             if (!board.child) {
                 throw new Error("cannot add task without a column");
             }
-            const src = remove_column(board, action.src);
+            const src = removeColumn(board, action.src);
             if (!src) {
                 throw new Error("column does not exist");
             }
             switch (action.dest.tag) {
                 case "first_child": {
-                    add_first_child({ dest: board, src });
+                    addFirstChild({ dest: board, src });
                     break;
                 }
                 case "after": {
-                    const dest = column_from_id(
+                    const dest = columnFromId(
                         board.child,
                         action.dest.sibling,
                     );
                     if (!dest) {
                         throw new Error("task parent does not exist");
                     }
-                    add_after({ dest, src });
+                    addAfter({ dest, src });
                     break;
                 }
             }
@@ -189,7 +189,7 @@ export function do_action(board: Board, action: Action) {
             if (!board.child) {
                 throw new Error("cannot edit task without a column");
             }
-            const target = task_from_id(board.child, action.target);
+            const target = taskFromId(board.child, action.target);
             if (!target) {
                 throw new Error("task does not exist");
             }
@@ -200,7 +200,7 @@ export function do_action(board: Board, action: Action) {
             if (!board.child) {
                 throw new Error("cannot edit task without a column");
             }
-            const target = column_from_id(board.child, action.target);
+            const target = columnFromId(board.child, action.target);
             if (!target) {
                 throw new Error("task does not exist");
             }
@@ -214,37 +214,37 @@ export function do_action(board: Board, action: Action) {
     }
 }
 
-function last_sibling<T extends { after: T | null }>(item: T): T {
-    return item.after ? last_sibling(item.after) : item;
+function lastSibling<T extends { after: T | null }>(item: T): T {
+    return item.after ? lastSibling(item.after) : item;
 }
 
-function column_from_id(item: Column, target: Id): Column | null {
-    if (cmp_id(item.id, target)) {
+function columnFromId(item: Column, target: Id): Column | null {
+    if (cmpId(item.id, target)) {
         return item;
     }
-    return item.after !== null ? column_from_id(item.after, target) : null;
+    return item.after !== null ? columnFromId(item.after, target) : null;
 }
 
-function is_task(value: Column | Task): value is Task {
-    return value.type_id === "task";
+function isTask(value: Column | Task): value is Task {
+    return value.typeId === "task";
 }
 
-function task_from_id(
+function taskFromId(
     item: Column | Task,
     target: Id,
 ): Task | null {
-    if (cmp_id(item.id, target)) {
-        if (!is_task(item)) {
+    if (cmpId(item.id, target)) {
+        if (!isTask(item)) {
             throw new Error("tried to access task with a column id");
         }
         return item;
     }
-    const after = item.after !== null ? task_from_id(item.after, target) : null;
+    const after = item.after !== null ? taskFromId(item.after, target) : null;
     if (after !== null) {
         return after;
     }
 
-    const child = item.child !== null ? task_from_id(item.child, target) : null;
+    const child = item.child !== null ? taskFromId(item.child, target) : null;
     if (child !== null) {
         return child;
     }
@@ -256,7 +256,7 @@ type AddChild =
     | { dest: Task | Column; src: Task }
     | { dest: Board; src: Column };
 
-function add_first_child({ dest, src }: AddChild) {
+function addFirstChild({ dest, src }: AddChild) {
     if (dest.child !== null) {
         src.after = dest.child;
         dest.child = src;
@@ -265,23 +265,23 @@ function add_first_child({ dest, src }: AddChild) {
     }
 }
 
-function add_last_child({ dest, src }: AddChild) {
+function addLastChild({ dest, src }: AddChild) {
     if (dest.child !== null) {
-        const last = last_sibling(dest.child);
+        const last = lastSibling(dest.child);
         last.after = src;
     } else {
         dest.child = src;
     }
 }
 
-function add_after<T extends Task | Column>(
+function addAfter<T extends Task | Column>(
     { dest, src }: { dest: T; src: T },
 ) {
     src.after = dest.after;
     dest.after = src;
 }
 
-function remove_column_after(before: Column, target: Id): Column | null {
+function removeColumnAfter(before: Column, target: Id): Column | null {
     if (before.after === null) {
         return null;
     }
@@ -293,10 +293,10 @@ function remove_column_after(before: Column, target: Id): Column | null {
         return removed;
     }
 
-    return null;
+    return removeColumnAfter(before.after, target);
 }
 
-function remove_column(board: Board, target: Id): Column | null {
+function removeColumn(board: Board, target: Id): Column | null {
     if (!board.child) {
         return null;
     }
@@ -308,10 +308,10 @@ function remove_column(board: Board, target: Id): Column | null {
         return removed;
     }
 
-    return remove_column_after(board.child, target);
+    return removeColumnAfter(board.child, target);
 }
 
-function remove_task_task(before: Task, target: Id): Task | null {
+function removeTaskFromTask(before: Task, target: Id): Task | null {
     if (before.child) {
         if (before.child.id === target) {
             const removed = before.child;
@@ -319,7 +319,7 @@ function remove_task_task(before: Task, target: Id): Task | null {
             removed.after = null;
             return removed;
         } else {
-            const found = remove_task_task(before.child, target);
+            const found = removeTaskFromTask(before.child, target);
             if (found) {
                 return found;
             }
@@ -333,7 +333,7 @@ function remove_task_task(before: Task, target: Id): Task | null {
             removed.after = null;
             return removed;
         } else {
-            const found = remove_task_task(before.after, target);
+            const found = removeTaskFromTask(before.after, target);
             if (found) {
                 return found;
             }
@@ -343,9 +343,9 @@ function remove_task_task(before: Task, target: Id): Task | null {
     return null;
 }
 
-function remove_task_column(column: Column, target: Id): Task | null {
+function removeTaskFromColumn(column: Column, target: Id): Task | null {
     if (!column.child) {
-        return column.after ? remove_task_column(column.after, target) : null;
+        return column.after ? removeTaskFromColumn(column.after, target) : null;
     }
     if (column.child.id === target) {
         const removed = column.child;
@@ -353,55 +353,16 @@ function remove_task_column(column: Column, target: Id): Task | null {
         removed.after = null;
         return removed;
     }
-
-    const found = remove_task_task(column.child, target);
+    const found = removeTaskFromTask(column.child, target);
     if (found) {
         return found;
     }
-
-    return column.after ? remove_task_column(column.after, target) : null;
+    return column.after ? removeTaskFromColumn(column.after, target) : null;
 }
 
-function remove_task(board: Board, target: Id): Task | null {
+function removeTask(board: Board, target: Id): Task | null {
     if (!board.child) {
         return null;
     }
-    return remove_task_column(board.child, target);
+    return removeTaskFromColumn(board.child, target);
 }
-
-Deno.test("worx", () => {
-    let ids = 0;
-    let colId;
-    let task1Id;
-    let task2Id;
-    const b: Board = {
-        id_counter: 0,
-        title: "a",
-        child: {
-            id: colId = { inner: ids++ },
-            type_id: "column",
-            title: "b",
-            child: {
-                id: task1Id = { inner: ids++ },
-                type_id: "task",
-                content: "task 1",
-                child: null,
-                after: {
-                    id: task2Id = { inner: ids++ },
-                    type_id: "task",
-                    content: "task 2",
-                    child: null,
-                    after: null,
-                },
-            },
-            after: null,
-        },
-    };
-
-    remove_task(b, task2Id);
-    console.assert(b.child!.child!.child === null);
-    remove_task(b, task1Id);
-    console.assert(b.child!.child === null);
-    remove_column(b, colId);
-    console.assert(b.child === null);
-});

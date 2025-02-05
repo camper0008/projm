@@ -1,4 +1,4 @@
-import { Id, TaskPosition } from "bsm";
+import { TaskPosition } from "bsm";
 
 export type ZoneId = number;
 
@@ -6,20 +6,18 @@ export interface Zone {
     id: ZoneId;
     element: HTMLElement;
     position: TaskPosition;
-    index: number;
 }
 
 export class DragZone {
     private idCounter: ZoneId = 0;
     private zones: Zone[] = [];
 
-    createDragZone(position: TaskPosition, index: number): HTMLElement {
+    createDragZone(position: TaskPosition): HTMLElement {
         const zone = document.createElement("div");
         zone.classList.add("drag-zone");
         this.zones.push({
             element: zone,
             position,
-            index: index,
             id: this.idCounter,
         });
         this.idCounter += 1;

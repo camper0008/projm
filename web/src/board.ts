@@ -231,6 +231,6 @@ export class Board {
             eventHandler: (event: UiEvent) => this.handleUiEvent(event),
             dragZone: this.dragZone,
         });
-        this.element.replaceChildren(...renderer.render(this.state));
+        this.element.replaceChildren(...renderer.render_content(this.state));
     }
 }
