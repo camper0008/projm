@@ -1,4 +1,4 @@
-import { Id } from "bsm";
+import { Id, TaskPosition } from "bsm";
 
 export type UiEvent =
     | { tag: "add_column" }
@@ -14,6 +14,11 @@ export type UiEvent =
         task: Id;
         ref: HTMLElement;
         position: [number, number];
+    }
+    | {
+        tag: "drag_end";
+        task: Id;
+        position: TaskPosition;
     };
 
 export type UiEventHandler = (event: UiEvent) => void;

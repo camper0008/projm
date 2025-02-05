@@ -29,7 +29,14 @@ export class DragZone {
         return (width > 0 && height > 0);
     }
 
-    private distance(zone: Zone, [x, y]: [number, number]): number {
+    private distance(left: [number, number], right: [number, number]): number {
+        const distance = Math.sqrt(
+            (left[0] - right[0]) ** 2 + (left[1] - right[1]) ** 2,
+        );
+        return distance;
+    }
+
+    private zone_distance(zone: Zone, [x, y]: [number, number]): number {
         const bounds = zone.element.getBoundingClientRect();
         const zoneX = bounds.left + bounds.width * 0.5;
         const zoneY = bounds.top + bounds.height * 0.5;
@@ -38,12 +45,25 @@ export class DragZone {
         );
         return distance;
     }
+    markHtmlDragStatus(
+        ref: HTMLElement,
+        { beingDragged }: { beingDragged: boolean },
+    ) {
+        if (beingDragged) {
+            ref.classList.add("being-dragged");
+        } else {
+            ref.classList.remove("being-dragged");
+        }
+    }
 
-    closestDragZone([x, y]: [number, number]): ZoneId {
+    closestDragZone(
+        [x, y]: [number, number],
+        { refCenter }: { refCenter: [number, number] },
+    ): ZoneId | null {
         const distances: [Zone, number][] = this.zones
             .filter(this.zoneActive)
             .map(
-                (zone) => [zone, this.distance(zone, [x, y])],
+                (zone) => [zone, this.zone_distance(zone, [x, y])],
             );
         const closest = distances.toSorted(([_, distA], [__, distB]) =>
             distB - distA
@@ -52,6 +72,10 @@ export class DragZone {
             throw new Error(
                 "unreachable: tried to get closest drag zone with no drag zones created",
             );
+        }
+        const distanceToRefCenter = this.distance([x, y], refCenter);
+        if (distanceToRefCenter < closest[1]) {
+            return null;
         }
         return closest[0].id;
     }
@@ -75,6 +99,12 @@ export class DragZone {
     hideZones() {
         for (const zone of this.zones) {
             zone.element.classList.remove("active");
+        }
+    }
+
+    removeHighlight() {
+        for (const zone of this.zones) {
+            zone.element.classList.remove("highlighted");
         }
     }
 
