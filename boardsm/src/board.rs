@@ -1,4 +1,4 @@
-use crate::id::Id;
+use crate::id::{Id, IdGen};
 
 type Ptr<T> = Option<Box<T>>;
 
@@ -25,9 +25,26 @@ pub struct Board {
     pub child: Option<Box<Column>>,
 }
 
-enum Move {
+pub enum TaskPosition {
     FirstChildOf(Id),
     After(Id),
+}
+
+pub enum ColumnPosition {
+    FirstChild,
+    After(Id),
+}
+
+pub enum Action {
+    AddColumn { title: String },
+    AddTask { dest: Id, content: String },
+    DeleteColumn { dest: Id },
+    DeleteTask { dest: Id },
+    MoveTask { src: Id, dest: TaskPosition },
+    MoveColumn { src: Id, dest: ColumnPosition },
+    EditTask { dest: Id, content: String },
+    EditColumn { dest: Id, title: String },
+    EditBoard { title: String },
 }
 
 impl Board {
@@ -39,38 +56,221 @@ impl Board {
         }
     }
 
-    pub fn last_task_sibling(item: &mut Task) -> &mut Task {
+    pub fn feed_action(&mut self, id_gen: &mut IdGen, action: Action) {
+        match action {
+            Action::AddColumn { title } => Self::add_column_to_board_last_child(
+                self,
+                Column {
+                    id: id_gen.gen(),
+                    title,
+                    child: None,
+                    after: None,
+                },
+            ),
+            Action::AddTask { dest, content } => {
+                let src = Task {
+                    id: id_gen.gen(),
+                    content,
+                    after: None,
+                    child: None,
+                };
+                let root = self.child.as_mut().expect("should exist idk");
+                let column = Self::column_from_id(root, dest);
+                if let Some(column) = column {
+                    return Self::add_task_to_column_last_child(column, src);
+                }
+
+                let task = Self::task_from_id(root, dest);
+                if let Some(task) = task {
+                    return Self::add_task_to_task_last_child(task, src);
+                }
+            }
+            Action::DeleteColumn { dest } => {
+                Self::remove_column(self, dest);
+            }
+            Action::DeleteTask { dest } => {
+                Self::remove_task(self, dest);
+            }
+            Action::MoveTask { src, dest } => {
+                let src = Self::remove_task(self, src);
+                let root = self.child.as_mut().expect("should exist idk");
+                match dest {
+                    TaskPosition::FirstChildOf(id) => {
+                        let column = Self::column_from_id(root, id);
+                        if let Some(column) = column {
+                            return Self::add_task_to_column_first_child(column, src);
+                        }
+
+                        let task = Self::task_from_id(root, id);
+                        if let Some(task) = task {
+                            return Self::add_task_to_task_first_child(task, src);
+                        }
+                    }
+                    TaskPosition::After(id) => {
+                        let task = Self::task_from_id(root, id);
+                        if let Some(task) = task {
+                            return Self::add_task_after_task(task, src);
+                        }
+                    }
+                }
+            }
+            Action::MoveColumn { src, dest } => {
+                let src = Self::remove_column(self, src);
+                match dest {
+                    ColumnPosition::FirstChild => {
+                        Self::add_column_to_board_first_child(self, src);
+                    }
+                    ColumnPosition::After(dest) => {
+                        let root = self.child.as_mut().expect("should exist idk");
+                        let dest = Self::column_from_id(root, dest).expect("should exist idk");
+                        Self::add_column_after_column(dest, src);
+                    }
+                }
+            }
+            Action::EditTask { dest, content } => {
+                let root = self.child.as_mut().expect("should exist idk");
+                let dest = Self::task_from_id(root, dest).expect("should exist idk");
+                dest.content = content;
+            }
+            Action::EditColumn { dest, title } => {
+                let root = self.child.as_mut().expect("should exist idk");
+                let dest = Self::column_from_id(root, dest).expect("should exist idk");
+                dest.title = title;
+            }
+            Action::EditBoard { title } => {
+                self.title = title;
+            }
+        }
+    }
+
+    fn last_task_sibling(item: &mut Task) -> &mut Task {
         match item.after {
             Some(ref mut item) => Self::last_task_sibling(item),
             None => item,
         }
     }
 
-    pub fn last_column_sibling(item: &mut Column) -> &mut Column {
+    fn last_column_sibling(item: &mut Column) -> &mut Column {
         match item.after {
             Some(ref mut item) => Self::last_column_sibling(item),
             None => item,
         }
     }
 
-    pub fn add_task_to_column(dest: &mut Column, task: Ptr<Task>) {
-        match dest.child {
-            Some(ref mut child) => Self::last_task_sibling(child).after = task,
-            None => dest.child = task,
+    fn column_from_id(column: &mut Column, target: Id) -> Option<&mut Column> {
+        if column.id == target {
+            return Some(column);
+        }
+
+        column
+            .after
+            .as_mut()
+            .and_then(|column| Self::column_from_id(column, target))
+    }
+
+    fn task_from_id_and_task(task: &mut Task, target: Id) -> Option<&mut Task> {
+        if task.id == target {
+            return Some(task);
+        }
+
+        let child = task
+            .child
+            .as_mut()
+            .and_then(|v| Self::task_from_id_and_task(v, target));
+
+        if let Some(child) = child {
+            return Some(child);
+        }
+
+        task.after
+            .as_mut()
+            .and_then(|task| Self::task_from_id_and_task(task, target))
+    }
+
+    fn task_from_id(column: &mut Column, target: Id) -> Option<&mut Task> {
+        let child = column
+            .child
+            .as_mut()
+            .and_then(|v| Self::task_from_id_and_task(v, target));
+
+        if let Some(child) = child {
+            return Some(child);
+        }
+
+        column
+            .after
+            .as_mut()
+            .and_then(|column| Self::task_from_id(column, target))
+    }
+
+    fn add_column_after_column(dest: &mut Column, mut column: Column) {
+        match dest.after.take() {
+            Some(after) => {
+                column.after = Some(after);
+                dest.after = Some(Box::new(column));
+            }
+            None => dest.after = Some(Box::new(column)),
         }
     }
 
-    pub fn add_task_to_task(dest: &mut Task, task: Ptr<Task>) {
-        match dest.child {
-            Some(ref mut child) => Self::last_task_sibling(child).after = task,
-            None => dest.child = task,
+    fn add_task_after_task(dest: &mut Task, mut task: Task) {
+        match dest.after.take() {
+            Some(after) => {
+                task.after = Some(after);
+                dest.after = Some(Box::new(task));
+            }
+            None => dest.after = Some(Box::new(task)),
         }
     }
 
-    pub fn add_column_to_board(dest: &mut Self, column: Ptr<Column>) {
+    fn add_task_to_column_last_child(dest: &mut Column, task: Task) {
+        match dest.child {
+            Some(ref mut child) => Self::last_task_sibling(child).after = Some(Box::new(task)),
+            None => dest.child = Some(Box::new(task)),
+        }
+    }
+
+    fn add_task_to_column_first_child(dest: &mut Column, mut task: Task) {
+        match dest.child.take() {
+            Some(child) => {
+                task.after = Some(child);
+                dest.child = Some(Box::new(task));
+            }
+            None => dest.child = Some(Box::new(task)),
+        }
+    }
+
+    fn add_task_to_task_first_child(dest: &mut Task, mut task: Task) {
+        match dest.child.take() {
+            Some(child) => {
+                task.after = Some(child);
+                dest.child = Some(Box::new(task));
+            }
+            None => dest.child = Some(Box::new(task)),
+        }
+    }
+
+    fn add_task_to_task_last_child(dest: &mut Task, task: Task) {
+        match dest.child {
+            Some(ref mut child) => Self::last_task_sibling(child).after = Some(Box::new(task)),
+            None => dest.child = Some(Box::new(task)),
+        }
+    }
+
+    fn add_column_to_board_first_child(dest: &mut Self, mut column: Column) {
+        match dest.child.take() {
+            Some(child) => {
+                column.after = Some(child);
+                dest.child = Some(Box::new(column));
+            }
+            None => dest.child = Some(Box::new(column)),
+        }
+    }
+
+    fn add_column_to_board_last_child(dest: &mut Self, column: Column) {
         match &mut dest.child {
-            Some(child) => Self::last_column_sibling(child).after = column,
-            None => dest.child = column,
+            Some(child) => Self::last_column_sibling(child).after = Some(Box::new(column)),
+            None => dest.child = Some(Box::new(column)),
         }
     }
 
@@ -96,7 +296,7 @@ impl Board {
         None
     }
 
-    pub fn remove_task(board: &mut Self, target: Id) -> Task {
+    fn remove_task(board: &mut Self, target: Id) -> Task {
         let mut current = board
             .child
             .as_mut()
@@ -115,7 +315,7 @@ impl Board {
         }
     }
 
-    pub fn remove_column(board: &mut Self, target: Id) -> Column {
+    fn remove_column(board: &mut Self, target: Id) -> Column {
         let mut current = board.child.take().expect("should not reach invalid state");
         let before = &mut board.child;
         loop {
@@ -136,20 +336,6 @@ impl Board {
                     .expect("should not reach invalid state");
             }
         }
-    }
-
-    pub fn move_column(dest: Move, src: Id) {}
-
-    pub fn edit_board(dest: &mut Self, title: String) {
-        dest.title = title;
-    }
-
-    pub fn edit_column(dest: &mut Column, title: String) {
-        dest.title = title;
-    }
-
-    pub fn edit_task(dest: &mut Task, content: String) {
-        dest.content = content;
     }
 }
 
@@ -195,7 +381,7 @@ mod test {
             after: None,
         };
 
-        Board::add_column_to_board(&mut board, wrap_ptr(start));
+        Board::add_column_to_board_last_child(&mut board, start);
 
         let removed = Board::remove_task(&mut board, task);
         assert_eq!(removed.id, task);
@@ -230,9 +416,9 @@ mod test {
             child: None,
             after: None,
         };
-        Board::add_column_to_board(&mut board, wrap_ptr(start));
-        Board::add_column_to_board(&mut board, wrap_ptr(middle));
-        Board::add_column_to_board(&mut board, wrap_ptr(end));
+        Board::add_column_to_board_last_child(&mut board, start);
+        Board::add_column_to_board_last_child(&mut board, middle);
+        Board::add_column_to_board_last_child(&mut board, end);
 
         let removed = Board::remove_column(&mut board, start_id);
         assert_eq!(removed.title, "start".to_string());
@@ -268,9 +454,9 @@ mod test {
             child: None,
             after: None,
         };
-        Board::add_column_to_board(&mut board, wrap_ptr(start));
-        Board::add_column_to_board(&mut board, wrap_ptr(middle));
-        Board::add_column_to_board(&mut board, wrap_ptr(end));
+        Board::add_column_to_board_last_child(&mut board, start);
+        Board::add_column_to_board_last_child(&mut board, middle);
+        Board::add_column_to_board_last_child(&mut board, end);
 
         let removed = Board::remove_column(&mut board, middle_id);
         assert_eq!(removed.title, "middle".to_string());
