@@ -68,7 +68,7 @@ export class DragZone {
         const closest = distances.toSorted(([_, distA], [__, distB]) =>
             distB - distA
         ).pop();
-        if (!closest) {
+        if (closest === undefined) {
             throw new Error(
                 "unreachable: tried to get closest drag zone with no drag zones created",
             );
@@ -82,7 +82,7 @@ export class DragZone {
 
     zoneFromId(zoneId: ZoneId): Zone {
         const zone = this.zones.find((v) => v.id === zoneId);
-        if (!zone) {
+        if (zone === undefined) {
             throw new Error(
                 "unreachable: zoneId is provided by dragZone itself",
             );

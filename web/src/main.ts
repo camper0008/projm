@@ -64,7 +64,7 @@ class DragSession {
             { refCenter: this.refCenter() },
         );
         this.dispose();
-        if (!closest) {
+        if (closest === null) {
             return;
         }
         const position = this.dragZone.zoneFromId(closest).position;
