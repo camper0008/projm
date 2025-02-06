@@ -21,3 +21,7 @@ the user(s) of this software
 5. wants to be able to create, delete and move tasks
 6. wants to be able to accomplish the above goals with ease - i.e. no extensive
    menuing, as these are the primary uses of the software
+
+## example
+
+an example using [localstorage](https://developer.mozilla.org/en-US/docs/Web/API/Storage) is hosted at [projm.tpho.dk](https://projm.tpho.dk/)
