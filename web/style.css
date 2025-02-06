@@ -26,12 +26,12 @@ body.dragging-object * {
 .board-content {
     display: flex;
     flex: 1;
-    overflow-x: scroll;
+    overflow-x: auto;
     gap: 0.5rem;
 }
 
 .column {
-    overflow-y: scroll;
+    overflow-y: auto;
     flex: 1;
     padding: 0.5rem;
     border-radius: 0.5rem;

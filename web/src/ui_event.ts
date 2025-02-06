@@ -38,6 +38,15 @@ export type UiEvent =
 
 export type UiEventHandler = (event: UiEvent) => void;
 
+async function removeBoard(board: storage.Id, storage: storage.Storage) {
+    const res = await storage.deleteBoard({ board });
+    if (!res.ok) {
+        alert(res.message);
+        return;
+    }
+    location.search = "";
+}
+
 async function attemptCommit(
     action: bsm.Action,
     storage: storage.Storage,
@@ -47,7 +56,7 @@ async function attemptCommit(
     const res = await storage.executeAction({ action, hash, board: info.id });
     if (!res.ok) {
         alert(res.message);
-        /// most likely "invalid board hash", so we refresh
+        // most likely "invalid board hash", so we refresh
         location.reload();
         return;
     }
@@ -95,6 +104,7 @@ export function handleUiEvent(
             break;
         }
         case "remove_board": {
+            removeBoard(board.info.id, storage);
             break;
         }
         case "remove_column": {
