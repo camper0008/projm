@@ -14,19 +14,18 @@ export function makeId(): Id {
 export type BoardData = {
     id: Id;
     initialTitle: string;
-    cachedTitle: string;
     actions: bsm.Action[];
 };
 
 export type BoardPreview = {
     id: Id;
-    title: BoardData["cachedTitle"];
+    title: string;
 };
 
 export interface Db {
     createBoard(initialTitle: string): Result<BoardPreview, string>;
     commitAction(board: Id, action: bsm.Action): Result<void, string>;
-    boards(): BoardPreview[];
+    boards(): Result<BoardPreview[], string>;
     retrieveBoardData(board: Id): Result<BoardData, string>;
     deleteBoard(board: Id): Result<void, string>;
 }

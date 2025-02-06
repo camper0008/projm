@@ -1,8 +1,11 @@
 import * as bsm from "bsm";
 import { BoardData, BoardPreview, Db, Id, makeId } from "./db.ts";
 import { err, ok, Result } from "@result/result";
+
+type StoredBoardData = BoardData & { cachedTitle: string };
+
 export class MemDb implements Db {
-    boardData: BoardData[];
+    boardData: StoredBoardData[];
 
     constructor() {
         this.boardData = [];
@@ -29,11 +32,11 @@ export class MemDb implements Db {
         }
         return ok();
     }
-    boards(): BoardPreview[] {
-        return this.boardData.map(({ id, cachedTitle }) => ({
+    boards(): Result<BoardPreview[], string> {
+        return ok(this.boardData.map(({ id, cachedTitle }) => ({
             id,
             title: cachedTitle,
-        }));
+        })));
     }
     retrieveBoardData(board: Id): Result<BoardData, string> {
         const found = this.boardData.find((v) => v.id.inner === board.inner);

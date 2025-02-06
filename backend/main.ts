@@ -32,7 +32,7 @@ function createBoard(
 
 function boards(
     db: Db,
-): BoardPreview[] {
+): Result<BoardPreview[], string> {
     return db.boards();
 }
 
@@ -91,12 +91,11 @@ async function main() {
     });
 
     router.post("/boards", (ctx) => {
-        const res = boards(db);
-        ctx.response.body = {
-            ok: true,
-            message: "success",
-            boards: res,
-        };
+        const res = (boards(db)).match(
+            (boards) => ({ ok: true, message: "success", boards }),
+            (err) => ({ ok: false, message: err }),
+        );
+        ctx.response.body = res;
     });
 
     router.post("/board", async (ctx) => {
