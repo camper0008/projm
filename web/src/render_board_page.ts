@@ -1,14 +1,18 @@
-import { Board } from "bsm";
 import { DragZoner } from "./drag_zoner.ts";
 import { Renderer } from "./render_board.ts";
-import { handleUiEvent } from "./ui_event.ts";
+import { BoardStateConfig, handleUiEvent } from "./ui_event.ts";
+import * as storage from "./storage.ts";
 
-export function renderBoardPage(board: Board) {
+export function renderBoardPage(
+    board: BoardStateConfig,
+    storage: storage.Storage,
+) {
     const dragZoner = new DragZoner();
     const renderer = new Renderer({
-        board,
+        board: board.ref,
         dragZoner,
-        eventHandler: (event) => handleUiEvent(board, dragZoner, event),
+        eventHandler: (event) =>
+            handleUiEvent(board, storage, dragZoner, event),
     });
     const element = document.createElement("div");
     element.classList.add("board");

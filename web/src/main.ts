@@ -25,7 +25,14 @@ async function localStorageSolution() {
         for (const action of res.board.actions) {
             bsm.execute({ board, action });
         }
-        renderBoardPage(board);
+        renderBoardPage({
+            info: {
+                id: res.board.id,
+                initialTitle: res.board.initialTitle,
+            },
+            ref: board,
+            history: res.board.actions,
+        }, storage);
     } else {
         const res = await storage.boards();
         if (!res.ok) {
