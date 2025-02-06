@@ -23,38 +23,39 @@ type ExecuteActionRequest = {
     action: bsm.Action;
 };
 
-function createBoard(
+async function createBoard(
     db: Db,
     req: CreateBoardRequest,
-): Result<BoardPreview, string> {
-    return db.createBoard(req.title);
+): Promise<Result<BoardPreview, string>> {
+    return await db.createBoard(req.title);
 }
 
-function boards(
+async function boards(
     db: Db,
-): Result<BoardPreview[], string> {
-    return db.boards();
+): Promise<Result<BoardPreview[], string>> {
+    return await db.boards();
 }
 
-function deleteBoard(
+async function deleteBoard(
     db: Db,
     req: DeleteBoardRequest,
-): Result<void, string> {
-    return db.deleteBoard(req.board);
+): Promise<Result<void, string>> {
+    return await db.deleteBoard(req.board);
 }
 
-function board(
+async function board(
     db: Db,
     req: BoardRequest,
-): Result<BoardData, string> {
-    return db.retrieveBoardData(req.board);
+): Promise<Result<BoardData, string>> {
+    return await db.retrieveBoardData(req.board);
 }
 
 async function executeAction(
     db: Db,
     req: ExecuteActionRequest,
 ): Promise<Result<void, string>> {
-    const { isBreak, value: board } = db.retrieveBoardData(req.board).branch();
+    const { isBreak, value: board } = await db.retrieveBoardData(req.board)
+        .then((res) => res.branch());
     if (isBreak) return board;
 
     const newHash = await bsm.hashBoard(board.initialTitle, [
@@ -83,15 +84,15 @@ async function main() {
             return;
         }
 
-        const res = (createBoard(db, req)).match(
+        const res = (await createBoard(db, req)).match(
             (board) => ({ ok: true, message: "success", board }),
             (err) => ({ ok: false, message: err }),
         );
         ctx.response.body = res;
     });
 
-    router.post("/boards", (ctx) => {
-        const res = (boards(db)).match(
+    router.post("/boards", async (ctx) => {
+        const res = (await boards(db)).match(
             (boards) => ({ ok: true, message: "success", boards }),
             (err) => ({ ok: false, message: err }),
         );
@@ -106,7 +107,7 @@ async function main() {
             return;
         }
 
-        const res = (board(db, req)).match(
+        const res = (await board(db, req)).match(
             (board) => ({ ok: true, message: "success", board }),
             (err) => ({ ok: false, message: err }),
         );
@@ -136,7 +137,7 @@ async function main() {
             return;
         }
 
-        const res = (deleteBoard(db, req)).match(
+        const res = (await deleteBoard(db, req)).match(
             (_ok) => ({ ok: true, message: "success" }),
             (err) => ({ ok: false, message: err }),
         );

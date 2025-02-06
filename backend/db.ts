@@ -23,9 +23,9 @@ export type BoardPreview = {
 };
 
 export interface Db {
-    createBoard(initialTitle: string): Result<BoardPreview, string>;
-    commitAction(board: Id, action: bsm.Action): Result<void, string>;
-    boards(): Result<BoardPreview[], string>;
-    retrieveBoardData(board: Id): Result<BoardData, string>;
-    deleteBoard(board: Id): Result<void, string>;
+    createBoard(initialTitle: string): Promise<Result<BoardPreview, string>>;
+    commitAction(board: Id, action: bsm.Action): Promise<Result<void, string>>;
+    boards(): Promise<Result<BoardPreview[], string>>;
+    retrieveBoardData(board: Id): Promise<Result<BoardData, string>>;
+    deleteBoard(board: Id): Promise<Result<void, string>>;
 }

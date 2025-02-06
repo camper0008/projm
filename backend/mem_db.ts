@@ -4,6 +4,10 @@ import { err, ok, Result } from "@result/result";
 
 type StoredBoardData = BoardData & { cachedTitle: string };
 
+function resolve<T>(t: T): Promise<T> {
+    return Promise.resolve(t);
+}
+
 export class MemDb implements Db {
     boardData: StoredBoardData[];
 
@@ -11,7 +15,7 @@ export class MemDb implements Db {
         this.boardData = [];
     }
 
-    createBoard(initialTitle: string): Result<BoardPreview, string> {
+    createBoard(initialTitle: string): Promise<Result<BoardPreview, string>> {
         const id = makeId();
         this.boardData.push({
             id,
@@ -19,40 +23,40 @@ export class MemDb implements Db {
             cachedTitle: initialTitle,
             actions: [],
         });
-        return ok({ id, title: initialTitle });
+        return resolve(ok({ id, title: initialTitle }));
     }
-    commitAction(board: Id, action: bsm.Action): Result<void, string> {
+    commitAction(board: Id, action: bsm.Action): Promise<Result<void, string>> {
         const found = this.boardData.find((v) => v.id.inner === board.inner);
         if (!found) {
-            return err("invalid board id");
+            return resolve(err("invalid board id"));
         }
         found.actions.push(action);
         if (action.tag === "edit_board") {
             found.cachedTitle = action.title;
         }
-        return ok();
+        return resolve(ok());
     }
-    boards(): Result<BoardPreview[], string> {
-        return ok(this.boardData.map(({ id, cachedTitle }) => ({
+    boards(): Promise<Result<BoardPreview[], string>> {
+        return resolve(ok(this.boardData.map(({ id, cachedTitle }) => ({
             id,
             title: cachedTitle,
-        })));
+        }))));
     }
-    retrieveBoardData(board: Id): Result<BoardData, string> {
+    retrieveBoardData(board: Id): Promise<Result<BoardData, string>> {
         const found = this.boardData.find((v) => v.id.inner === board.inner);
         if (!found) {
-            return err("invalid board id");
+            return resolve(err("invalid board id"));
         }
-        return ok(found);
+        return resolve(ok(found));
     }
-    deleteBoard(board: Id): Result<void, string> {
+    deleteBoard(board: Id): Promise<Result<void, string>> {
         const found = this.boardData.findIndex((v) =>
             v.id.inner === board.inner
         );
         if (found === -1) {
-            return err("invalid board id");
+            return resolve(err("invalid board id"));
         }
         this.boardData.splice(found, 1);
-        return ok();
+        return resolve(ok());
     }
 }
