@@ -61,25 +61,6 @@ export function makeBoard(title: string): Board {
         idCounter: 0,
         child: null,
     };
-    board.child = {
-        id: makeId(board),
-        typeId: "column",
-        title: "todo",
-        after: {
-            id: makeId(board),
-            typeId: "column",
-            title: "doing",
-            after: {
-                id: makeId(board),
-                typeId: "column",
-                title: "done",
-                after: null,
-                child: null,
-            },
-            child: null,
-        },
-        child: null,
-    };
     return board;
 }
 
@@ -170,6 +151,8 @@ export function execute({ board, action }: { board: Board; action: Action }) {
             if (!board.child) {
                 throw new Error("cannot add task without a column");
             }
+            console.dir(action);
+            console.dir(board);
             const src = removeTask(board, action.src);
             if (!src) {
                 throw new Error("task  does not exist");
@@ -324,7 +307,7 @@ function removeColumnAfter(before: Column, target: Id): Column | null {
         return null;
     }
 
-    if (before.after.id === target) {
+    if (cmpId(before.after.id, target)) {
         const removed = before.after;
         before.after = removed.after;
         removed.after = null;
@@ -339,7 +322,7 @@ function removeColumn(board: Board, target: Id): Column | null {
         return null;
     }
 
-    if (board.child.id === target) {
+    if (cmpId(board.child.id, target)) {
         const removed = board.child;
         board.child = board.child.after;
         removed.after = null;
@@ -351,7 +334,7 @@ function removeColumn(board: Board, target: Id): Column | null {
 
 function removeTaskFromTask(before: Task, target: Id): Task | null {
     if (before.child) {
-        if (before.child.id === target) {
+        if (cmpId(before.child.id, target)) {
             const removed = before.child;
             before.child = removed.after;
             removed.after = null;
@@ -365,7 +348,7 @@ function removeTaskFromTask(before: Task, target: Id): Task | null {
     }
 
     if (before.after) {
-        if (before.after.id === target) {
+        if (cmpId(before.after.id, target)) {
             const removed = before.after;
             before.after = removed.after;
             removed.after = null;
@@ -385,7 +368,7 @@ function removeTaskFromColumn(column: Column, target: Id): Task | null {
     if (!column.child) {
         return column.after ? removeTaskFromColumn(column.after, target) : null;
     }
-    if (column.child.id === target) {
+    if (cmpId(column.child.id, target)) {
         const removed = column.child;
         column.child = removed.after;
         removed.after = null;
