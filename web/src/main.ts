@@ -3,6 +3,7 @@ import { renderBoardPage } from "./render_board_page.ts";
 import { Storage } from "./storage.ts";
 import { LocalStorage } from "./local_storage.ts";
 import { renderBoardsPage } from "./render_boards_page.ts";
+import { BackendStorage } from "./backend_storage.ts";
 
 function renderError(message: string) {
     const container = document.querySelector<HTMLElement>("#content");
@@ -13,7 +14,7 @@ function renderError(message: string) {
 }
 
 async function localStorageSolution() {
-    const storage: Storage = new LocalStorage();
+    const storage: Storage = new BackendStorage("http://localhost:8080");
     const params = new URLSearchParams(location.search);
     const maybeBoard = params.get("board");
     if (maybeBoard) {
