@@ -13,8 +13,8 @@ function renderError(message: string) {
     container.innerText = `an error occurred: ${message}`;
 }
 
-async function localStorageSolution() {
-    const storage: Storage = new BackendStorage("http://localhost:8080");
+async function start() {
+    const storage: Storage = new LocalStorage();
     const params = new URLSearchParams(location.search);
     const maybeBoard = params.get("board");
     if (maybeBoard) {
@@ -44,7 +44,7 @@ async function localStorageSolution() {
 }
 
 async function main() {
-    await localStorageSolution();
+    await start();
 }
 
 main();

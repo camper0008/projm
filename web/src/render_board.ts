@@ -100,6 +100,9 @@ export class Renderer {
         content.innerText = task.content;
         toolbar.append(content);
 
+        const buttonGroup = document.createElement("div");
+        buttonGroup.classList.add("button-group");
+
         const addButton = this.taskToolbarButton("add_circle", "Add subtask");
         addButton.addEventListener("click", () => {
             this.eventHandler({
@@ -140,7 +143,8 @@ export class Renderer {
             });
         });
 
-        toolbar.append(addButton, editButton, dragButton, removeButton);
+        buttonGroup.append(addButton, editButton, dragButton, removeButton);
+        toolbar.append(buttonGroup);
 
         return toolbar;
     }
@@ -195,6 +199,9 @@ export class Renderer {
         title.classList.add("column-title");
         title.textContent = column.title;
 
+        const buttonGroup = document.createElement("div");
+        buttonGroup.classList.add("button-group");
+
         const addButton = this.columnToolbarButton("add_circle", "Add task");
         addButton.addEventListener("click", () => {
             this.eventHandler({ tag: "add_task", parent: column.id });
@@ -232,7 +239,8 @@ export class Renderer {
             this.eventHandler({ tag: "remove_column", target: column.id });
         });
 
-        toolbar.append(title, addButton, editButton, dragButton, removeButton);
+        buttonGroup.append(addButton, editButton, dragButton, removeButton);
+        toolbar.append(title, buttonGroup);
         columnElement.append(toolbar);
         columnElement.append(
             this.dragZoner.createDragZone({

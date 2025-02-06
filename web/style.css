@@ -146,6 +146,7 @@ body.dragging-object * {
     border-radius: 0.5rem;
     transition: 200ms opacity;
     display: none;
+    flex-shrink: 0;
 }
 
 .drag-zone[data-tag="task"] {
@@ -253,4 +254,9 @@ body.dragging-object * {
     color: inherit;
     text-decoration: none;
     cursor: pointer;
+}
+
+.button-group {
+    display: flex;
+    gap: 0.5rem;
 }
