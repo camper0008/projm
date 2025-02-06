@@ -7,6 +7,10 @@
     font-family: sans-serif;
 }
 
+body {
+    margin: 0;
+}
+
 body.dragging-object * {
     cursor: grabbing !important;
 }
@@ -15,6 +19,8 @@ body.dragging-object * {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    padding: 1rem;
+    min-height: calc(100vh - 2rem);
 }
 
 .board-title {
