@@ -1,6 +1,6 @@
 import { Application, Router } from "@oak/oak";
 import { oakCors } from "cors";
-import { MemDb } from "./mem_db.ts";
+import { FileDb } from "./file_db.ts";
 import { BoardData, BoardPreview, Db, Id } from "./db.ts";
 import { err, Result } from "@result/result";
 import * as bsm from "bsm";
@@ -73,7 +73,7 @@ async function executeAction(
 async function main() {
     const router = new Router();
 
-    const db: Db = new MemDb();
+    const db: Db = await FileDb.make();
 
     const app = new Application();
     router.post("/create_board", async (ctx) => {

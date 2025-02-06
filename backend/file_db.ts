@@ -52,7 +52,7 @@ export class FileDb implements Db {
         );
     }
 
-    async new() {
+    public static async make(): Promise<FileDb> {
         try {
             await Deno.mkdir("stored_boards");
         } catch (err) {
@@ -60,6 +60,7 @@ export class FileDb implements Db {
                 throw err;
             }
         }
+        return new FileDb();
     }
 
     async createBoard(
