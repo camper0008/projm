@@ -47,6 +47,8 @@ async function attemptCommit(
     const res = await storage.executeAction({ action, hash, board: info.id });
     if (!res.ok) {
         alert(res.message);
+        /// most likely "invalid board hash", so we refresh
+        location.reload();
         return;
     }
     bsm.execute({ board: ref, action });
