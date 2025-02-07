@@ -82,6 +82,14 @@ body.dragging-object * {
     transform: scale(0);
 }
 
+input.board-title,
+input.column-title,
+input.task-content {
+    border: none;
+    background-color: var(--slightly-less-black);
+    color: var(--white);
+}
+
 .column-title {
     font-weight: bold;
     font-size: 1.5rem;
@@ -90,6 +98,7 @@ body.dragging-object * {
     flex: 1;
     word-wrap: break-word;
     max-width: 100%;
+    cursor: text;
 }
 
 .task {
@@ -137,7 +146,9 @@ body.dragging-object * {
     font-weight: bold;
     flex: 1;
     word-wrap: break-word;
+    font-size: 1em;
     max-width: 100%;
+    cursor: text;
 }
 
 .drag-zone {

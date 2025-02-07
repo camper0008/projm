@@ -88,6 +88,49 @@ export class Renderer {
         return button;
     }
 
+    private taskContent(task: Task): HTMLElement {
+        const content = document.createElement("p");
+        content.classList.add("task-content");
+        content.innerText = task.content;
+
+        const input = document.createElement("input");
+        input.classList.add("task-content");
+        input.value = task.content;
+
+        content.addEventListener("click", () => {
+            const selection = getSelection();
+            if (selection && !selection.isCollapsed) {
+                return;
+            }
+
+            const submitted = (content: string) => {
+                this.eventHandler({
+                    tag: "edit_task",
+                    target: task.id,
+                    content,
+                });
+            };
+
+            input.addEventListener("blur", () => submitted(input.value));
+            input.addEventListener(
+                "keypress",
+                (event) => event.key === "Enter" && submitted(input.value),
+            );
+
+            requestAnimationFrame(() => {
+                input.focus();
+                input.setSelectionRange(
+                    task.content.length,
+                    task.content.length,
+                );
+            });
+
+            content.replaceWith(input);
+        });
+
+        return content;
+    }
+
     private taskToolbar(
         task: Task,
         taskElement: HTMLElement,
@@ -95,9 +138,8 @@ export class Renderer {
         const toolbar = document.createElement("div");
         toolbar.classList.add("task-toolbar");
 
-        const content = document.createElement("p");
-        content.classList.add("task-content");
-        content.innerText = task.content;
+        const content = this.taskContent(task);
+
         toolbar.append(content);
 
         const buttonGroup = document.createElement("div");
@@ -108,15 +150,6 @@ export class Renderer {
             this.eventHandler({
                 tag: "add_task",
                 parent: task.id,
-            });
-        });
-
-        const editButton = this.taskToolbarButton("edit", "Edit task");
-        editButton.addEventListener("click", () => {
-            this.eventHandler({
-                tag: "edit_task",
-                target: task.id,
-                oldContent: task.content,
             });
         });
 
@@ -143,7 +176,7 @@ export class Renderer {
             });
         });
 
-        buttonGroup.append(addButton, editButton, dragButton, removeButton);
+        buttonGroup.append(addButton, dragButton, removeButton);
         toolbar.append(buttonGroup);
 
         return toolbar;
@@ -184,6 +217,48 @@ export class Renderer {
         ]);
     }
 
+    private columnTitle(column: Column): HTMLElement {
+        const title = document.createElement("p");
+        title.classList.add("column-title");
+        title.textContent = column.title;
+
+        const input = document.createElement("input");
+        input.classList.add("column-title");
+        input.value = column.title;
+
+        title.addEventListener("click", () => {
+            const selection = getSelection();
+            if (selection && !selection.isCollapsed) {
+                return;
+            }
+
+            const submitted = (title: string) => {
+                this.eventHandler({
+                    tag: "edit_column",
+                    target: column.id,
+                    title,
+                });
+            };
+
+            input.addEventListener("blur", () => submitted(input.value));
+            input.addEventListener(
+                "keypress",
+                (event) => event.key === "Enter" && submitted(input.value),
+            );
+            title.replaceWith(input);
+
+            requestAnimationFrame(() => {
+                input.focus();
+                input.setSelectionRange(
+                    column.title.length,
+                    column.title.length,
+                );
+            });
+        });
+
+        return title;
+    }
+
     private column(
         column: Column | null,
         siblings: HTMLElement[] = [],
@@ -195,9 +270,7 @@ export class Renderer {
         columnElement.classList.add("column");
         const toolbar = document.createElement("div");
         toolbar.classList.add("column-toolbar");
-        const title = document.createElement("p");
-        title.classList.add("column-title");
-        title.textContent = column.title;
+        const title = this.columnTitle(column);
 
         const buttonGroup = document.createElement("div");
         buttonGroup.classList.add("button-group");
@@ -205,15 +278,6 @@ export class Renderer {
         const addButton = this.columnToolbarButton("add_circle", "Add task");
         addButton.addEventListener("click", () => {
             this.eventHandler({ tag: "add_task", parent: column.id });
-        });
-
-        const editButton = this.columnToolbarButton("edit", "Edit column");
-        editButton.addEventListener("click", () => {
-            this.eventHandler({
-                tag: "edit_column",
-                target: column.id,
-                oldTitle: column.title,
-            });
         });
 
         const dragButton = this.columnToolbarButton(
@@ -239,7 +303,7 @@ export class Renderer {
             this.eventHandler({ tag: "remove_column", target: column.id });
         });
 
-        buttonGroup.append(addButton, editButton, dragButton, removeButton);
+        buttonGroup.append(addButton, dragButton, removeButton);
         toolbar.append(title, buttonGroup);
         columnElement.append(toolbar);
         columnElement.append(
@@ -262,29 +326,60 @@ export class Renderer {
         ]);
     }
 
+    private boardTitle(board: Board): HTMLElement {
+        const title = document.createElement("p");
+        title.classList.add("board-title");
+        title.innerText = board.title;
+
+        const input = document.createElement("input");
+        input.classList.add("board-title");
+        input.value = board.title;
+
+        title.addEventListener("click", () => {
+            const selection = getSelection();
+            if (selection && !selection.isCollapsed) {
+                return;
+            }
+
+            const submitted = (title: string) => {
+                this.eventHandler({
+                    tag: "edit_board",
+                    title,
+                });
+            };
+
+            input.addEventListener("blur", () => submitted(input.value));
+            input.addEventListener(
+                "keypress",
+                (event) => event.key === "Enter" && submitted(input.value),
+            );
+            title.replaceWith(input);
+
+            requestAnimationFrame(() => {
+                input.focus();
+                input.setSelectionRange(
+                    board.title.length,
+                    board.title.length,
+                );
+            });
+        });
+
+        return title;
+    }
+
     private boardToolbar(
         board: Board,
     ): HTMLElement {
         const toolbar = document.createElement("div");
         toolbar.classList.add("board-toolbar");
 
-        const title = document.createElement("p");
-        title.classList.add("board-title");
-        title.innerText = board.title;
+        const title = this.boardTitle(board);
         toolbar.append(title);
 
         const addButton = this.boardToolbarButton("add_circle", "Add column");
         addButton.addEventListener("click", () => {
             this.eventHandler({
                 tag: "add_column",
-            });
-        });
-
-        const editButton = this.boardToolbarButton("edit", "Edit board");
-        editButton.addEventListener("click", () => {
-            this.eventHandler({
-                tag: "edit_board",
-                oldTitle: board.title,
             });
         });
 
@@ -295,7 +390,7 @@ export class Renderer {
             });
         });
 
-        toolbar.append(addButton, editButton, removeButton);
+        toolbar.append(addButton, removeButton);
 
         return toolbar;
     }

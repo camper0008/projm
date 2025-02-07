@@ -7,9 +7,9 @@ import { renderBoardPage } from "./render_board_page.ts";
 export type UiEvent =
     | { tag: "add_column" }
     | { tag: "add_task"; parent: bsm.Id }
-    | { tag: "edit_board"; oldTitle: string }
-    | { tag: "edit_column"; target: bsm.Id; oldTitle: string }
-    | { tag: "edit_task"; target: bsm.Id; oldContent: string }
+    | { tag: "edit_board"; title: string }
+    | { tag: "edit_column"; target: bsm.Id; title: string }
+    | { tag: "edit_task"; target: bsm.Id; content: string }
     | { tag: "remove_board" }
     | { tag: "remove_column"; target: bsm.Id }
     | { tag: "remove_task"; target: bsm.Id }
@@ -124,38 +124,26 @@ export function handleUiEvent(
             break;
         }
         case "edit_board": {
-            const title = prompt("New title?", event.oldTitle);
-            if (!title) {
-                break;
-            }
             const action: bsm.Action = {
                 tag: "edit_board",
-                title,
+                title: event.title,
             };
             attemptCommit(action, storage, board);
             break;
         }
         case "edit_column": {
-            const title = prompt("New title?", event.oldTitle);
-            if (!title) {
-                break;
-            }
             const action: bsm.Action = {
                 tag: "edit_column",
-                title,
+                title: event.title,
                 target: event.target,
             };
             attemptCommit(action, storage, board);
             break;
         }
         case "edit_task": {
-            const content = prompt("New content?", event.oldContent);
-            if (!content) {
-                break;
-            }
             const action: bsm.Action = {
                 tag: "edit_task",
-                content,
+                content: event.content,
                 target: event.target,
             };
             attemptCommit(action, storage, board);
