@@ -92,34 +92,19 @@ export class Renderer {
         const content = document.createElement("p");
         content.classList.add("task-content");
         content.textContent = task.content.trim();
+        content.tabIndex = 0;
 
         const input = document.createElement("input");
         input.classList.add("task-content");
         input.value = task.content;
 
-        content.addEventListener("click", () => {
+        const editing = () => {
             const selection = getSelection();
             if (selection && !selection.isCollapsed) {
                 return;
             }
 
-            const submitted = (value: string) => {
-                if (value === task.content) {
-                    input.replaceWith(content);
-                    return;
-                }
-                this.eventHandler({
-                    tag: "edit_task",
-                    target: task.id,
-                    content: value,
-                });
-            };
-
-            input.addEventListener("blur", () => submitted(input.value.trim()));
-            input.addEventListener(
-                "keypress",
-                (event) => event.key === "Enter" && input.blur(),
-            );
+            content.replaceWith(input);
 
             requestAnimationFrame(() => {
                 input.focus();
@@ -128,9 +113,27 @@ export class Renderer {
                     task.content.length,
                 );
             });
+        };
 
-            content.replaceWith(input);
-        });
+        const submitted = (value: string) => {
+            if (value === task.content) {
+                input.replaceWith(content);
+                return;
+            }
+            this.eventHandler({
+                tag: "edit_board",
+                title: value,
+            });
+        };
+
+        input.addEventListener("blur", () => submitted(input.value.trim()));
+        input.addEventListener(
+            "keypress",
+            (event) => event.key === "Enter" && input.blur(),
+        );
+
+        content.addEventListener("focus", () => editing());
+        content.addEventListener("click", () => editing());
 
         return content;
     }
@@ -225,34 +228,17 @@ export class Renderer {
         const title = document.createElement("p");
         title.classList.add("column-title");
         title.textContent = column.title.trim();
+        title.tabIndex = 0;
 
         const input = document.createElement("input");
         input.classList.add("column-title");
         input.value = column.title;
 
-        title.addEventListener("click", () => {
+        const editing = () => {
             const selection = getSelection();
             if (selection && !selection.isCollapsed) {
                 return;
             }
-
-            const submitted = (value: string) => {
-                if (value === column.title) {
-                    input.replaceWith(title);
-                    return;
-                }
-                this.eventHandler({
-                    tag: "edit_column",
-                    target: column.id,
-                    title: value,
-                });
-            };
-
-            input.addEventListener("blur", () => submitted(input.value.trim()));
-            input.addEventListener(
-                "keypress",
-                (event) => event.key === "Enter" && input.blur(),
-            );
 
             title.replaceWith(input);
 
@@ -263,7 +249,28 @@ export class Renderer {
                     column.title.length,
                 );
             });
-        });
+        };
+
+        const submitted = (value: string) => {
+            if (value === column.title) {
+                input.replaceWith(title);
+                return;
+            }
+            this.eventHandler({
+                tag: "edit_column",
+                target: column.id,
+                title: value,
+            });
+        };
+
+        input.addEventListener("blur", () => submitted(input.value.trim()));
+        input.addEventListener(
+            "keypress",
+            (event) => event.key === "Enter" && input.blur(),
+        );
+
+        title.addEventListener("focus", () => editing());
+        title.addEventListener("click", () => editing());
 
         return title;
     }
@@ -339,33 +346,17 @@ export class Renderer {
         const title = document.createElement("p");
         title.classList.add("board-title");
         title.textContent = board.title.trim();
+        title.tabIndex = 0;
 
         const input = document.createElement("input");
         input.classList.add("board-title");
         input.value = board.title;
 
-        title.addEventListener("click", () => {
+        const editing = () => {
             const selection = getSelection();
             if (selection && !selection.isCollapsed) {
                 return;
             }
-
-            const submitted = (value: string) => {
-                if (value === board.title) {
-                    input.replaceWith(title);
-                    return;
-                }
-                this.eventHandler({
-                    tag: "edit_board",
-                    title: value,
-                });
-            };
-
-            input.addEventListener("blur", () => submitted(input.value.trim()));
-            input.addEventListener(
-                "keypress",
-                (event) => event.key === "Enter" && input.blur(),
-            );
 
             title.replaceWith(input);
 
@@ -376,7 +367,27 @@ export class Renderer {
                     board.title.length,
                 );
             });
-        });
+        };
+
+        const submitted = (value: string) => {
+            if (value === board.title) {
+                input.replaceWith(title);
+                return;
+            }
+            this.eventHandler({
+                tag: "edit_board",
+                title: value,
+            });
+        };
+
+        input.addEventListener("blur", () => submitted(input.value.trim()));
+        input.addEventListener(
+            "keypress",
+            (event) => event.key === "Enter" && input.blur(),
+        );
+
+        title.addEventListener("focus", () => editing());
+        title.addEventListener("click", () => editing());
 
         return title;
     }
