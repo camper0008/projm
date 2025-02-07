@@ -91,7 +91,7 @@ export class Renderer {
     private taskContent(task: Task): HTMLElement {
         const content = document.createElement("p");
         content.classList.add("task-content");
-        content.innerText = task.content;
+        content.textContent = task.content.trim();
 
         const input = document.createElement("input");
         input.classList.add("task-content");
@@ -115,7 +115,11 @@ export class Renderer {
                 });
             };
 
-            input.addEventListener("blur", () => submitted(input.value));
+            input.addEventListener("blur", () => submitted(input.value.trim()));
+            input.addEventListener(
+                "keypress",
+                (event) => event.key === "Enter" && input.blur(),
+            );
 
             requestAnimationFrame(() => {
                 input.focus();
@@ -220,7 +224,7 @@ export class Renderer {
     private columnTitle(column: Column): HTMLElement {
         const title = document.createElement("p");
         title.classList.add("column-title");
-        title.textContent = column.title;
+        title.textContent = column.title.trim();
 
         const input = document.createElement("input");
         input.classList.add("column-title");
@@ -244,7 +248,11 @@ export class Renderer {
                 });
             };
 
-            input.addEventListener("blur", () => submitted(input.value));
+            input.addEventListener("blur", () => submitted(input.value.trim()));
+            input.addEventListener(
+                "keypress",
+                (event) => event.key === "Enter" && input.blur(),
+            );
 
             title.replaceWith(input);
 
@@ -330,7 +338,7 @@ export class Renderer {
     private boardTitle(board: Board): HTMLElement {
         const title = document.createElement("p");
         title.classList.add("board-title");
-        title.innerText = board.title;
+        title.textContent = board.title.trim();
 
         const input = document.createElement("input");
         input.classList.add("board-title");
@@ -353,7 +361,11 @@ export class Renderer {
                 });
             };
 
-            input.addEventListener("blur", () => submitted(input.value));
+            input.addEventListener("blur", () => submitted(input.value.trim()));
+            input.addEventListener(
+                "keypress",
+                (event) => event.key === "Enter" && input.blur(),
+            );
 
             title.replaceWith(input);
 

@@ -16,7 +16,7 @@ function createBoardItem(board: BoardPreview): HTMLElement {
     const container = document.createElement("li");
     container.classList.add("boards-list-item");
     const text = document.createElement("a");
-    text.innerText = board.title;
+    text.textContent = board.title.trim();
     text.href = `?board=${board.id.inner}`;
     text.classList.add("boards-list-text");
     container.append(text);
@@ -40,7 +40,7 @@ export function renderBoardsPage(boards: BoardPreview[], storage: Storage) {
     toolbar.classList.add("boards-list-toolbar");
     const createBoardButton = createButton("add_circle", "Create new board");
     createBoardButton.addEventListener("click", async () => {
-        const title = prompt("Board title?");
+        const title = prompt("Board title?")?.trim();
         if (!title) {
             return;
         }

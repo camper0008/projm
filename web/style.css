@@ -30,6 +30,11 @@ body.dragging-object * {
     cursor: text;
 }
 
+.board-title:empty::after {
+    content: "untitled board";
+    font-style: italic;
+}
+
 .board-content {
     display: flex;
     flex: 1;
@@ -102,6 +107,11 @@ input.task-content {
     cursor: text;
 }
 
+.column-title:empty::after {
+    content: "untitled column";
+    font-style: italic;
+}
+
 .task {
     display: flex;
     flex-direction: column;
@@ -151,6 +161,12 @@ input.task-content {
     max-width: 100%;
     cursor: text;
 }
+
+.task-content:empty::after {
+    content: "untitled task";
+    font-style: italic;
+}
+
 
 .drag-zone {
     background-color: hsl(193, 100%, 95%);
@@ -266,6 +282,11 @@ input.task-content {
     color: inherit;
     text-decoration: none;
     cursor: pointer;
+}
+
+.boards-list-text:empty::after {
+    content: "untitled board";
+    font-style: italic;
 }
 
 .button-group {

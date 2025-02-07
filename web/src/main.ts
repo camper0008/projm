@@ -9,7 +9,7 @@ function renderError(message: string) {
     if (!container) {
         throw new Error("unreachable: defined in index.html");
     }
-    container.innerText = `an error occurred: ${message}`;
+    container.textContent = `an error occurred: ${message}`;
 }
 
 async function start() {
