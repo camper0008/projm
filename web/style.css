@@ -27,6 +27,7 @@ body.dragging-object * {
     font-size: 2rem;
     margin: 1rem;
     flex: 1;
+    cursor: text;
 }
 
 .board-content {
