@@ -103,19 +103,19 @@ export class Renderer {
                 return;
             }
 
-            const submitted = (content: string) => {
+            const submitted = (value: string) => {
+                if (value === task.content) {
+                    input.replaceWith(content);
+                    return;
+                }
                 this.eventHandler({
                     tag: "edit_task",
                     target: task.id,
-                    content,
+                    content: value,
                 });
             };
 
             input.addEventListener("blur", () => submitted(input.value));
-            input.addEventListener(
-                "keypress",
-                (event) => event.key === "Enter" && submitted(input.value),
-            );
 
             requestAnimationFrame(() => {
                 input.focus();
@@ -232,19 +232,20 @@ export class Renderer {
                 return;
             }
 
-            const submitted = (title: string) => {
+            const submitted = (value: string) => {
+                if (value === column.title) {
+                    input.replaceWith(title);
+                    return;
+                }
                 this.eventHandler({
                     tag: "edit_column",
                     target: column.id,
-                    title,
+                    title: value,
                 });
             };
 
             input.addEventListener("blur", () => submitted(input.value));
-            input.addEventListener(
-                "keypress",
-                (event) => event.key === "Enter" && submitted(input.value),
-            );
+
             title.replaceWith(input);
 
             requestAnimationFrame(() => {
@@ -341,18 +342,19 @@ export class Renderer {
                 return;
             }
 
-            const submitted = (title: string) => {
+            const submitted = (value: string) => {
+                if (value === board.title) {
+                    input.replaceWith(title);
+                    return;
+                }
                 this.eventHandler({
                     tag: "edit_board",
-                    title,
+                    title: value,
                 });
             };
 
             input.addEventListener("blur", () => submitted(input.value));
-            input.addEventListener(
-                "keypress",
-                (event) => event.key === "Enter" && submitted(input.value),
-            );
+
             title.replaceWith(input);
 
             requestAnimationFrame(() => {
