@@ -405,6 +405,23 @@ export class Renderer {
         const title = this.boardTitle(board);
         toolbar.append(title);
 
+        const infoButton = this.boardToolbarButton("info", "Help with using");
+        infoButton.addEventListener("click", () => {
+            alert(
+                "projm: dumb (as in 'simple', 'not smart') project manager" +
+                    "\n\n" +
+                    "- click the (+) to add a column to a board, a task to a column, or a task or a task." +
+                    "\n" +
+                    "- click and hold down on the (::) to reorder tasks and columns." +
+                    "\n" +
+                    "- click the (🗑️) to delete your board/column/task. careful, it cannot be reverted!" +
+                    "\n" +
+                    "- click on any text field (board title, column title, task content) to edit. click enter or click off the text to submit." +
+                    "\n" +
+                    "- mark your tasks as completed by prefixing their content with 'done:' - this will also mark any subtasks as completed",
+            );
+        });
+
         const addButton = this.boardToolbarButton("add_circle", "Add column");
         addButton.addEventListener("click", () => {
             this.eventHandler({
@@ -419,7 +436,7 @@ export class Renderer {
             });
         });
 
-        toolbar.append(addButton, removeButton);
+        toolbar.append(infoButton, addButton, removeButton);
 
         return toolbar;
     }

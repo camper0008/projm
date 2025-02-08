@@ -303,3 +303,12 @@ input.task-content {
     display: flex;
     gap: 0.5rem;
 }
+
+.boards-attribution {
+    margin-top: 3rem;
+    text-align: center;
+}
+
+.boards-attribution a {
+    color: var(--white);
+}

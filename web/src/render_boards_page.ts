@@ -53,5 +53,10 @@ export function renderBoardsPage(boards: BoardPreview[], storage: Storage) {
     toolbar.append(createBoardButton);
 
     ul.append(...children);
-    container.append(title, ul, toolbar);
+
+    const attribution = document.createElement("p");
+    attribution.classList.add("boards-attribution");
+    attribution.innerHTML =
+        `<p>projm: dumb (as in 'simple', 'not smart') project management</p><p>icons by <a href="https://fonts.google.com/icons">google icons</a> | software by <a href="https://tpho.dk">tpho.dk</a> - <a href="https://github.com/camper0008/projm">src</a></p>`;
+    container.append(title, ul, toolbar, attribution);
 }
