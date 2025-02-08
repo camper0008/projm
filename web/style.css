@@ -162,6 +162,16 @@ input.task-content {
     cursor: text;
 }
 
+.task:has(> .task-toolbar > .task-content.task-done) .task-toolbar {
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.task:has(> .task-toolbar > .task-content.task-done) .task-content {
+    text-decoration: line-through;
+    opacity: 0.5;
+}
+
 .task-content:empty::after {
     content: "untitled task";
     font-style: italic;

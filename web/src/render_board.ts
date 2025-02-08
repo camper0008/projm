@@ -91,6 +91,9 @@ export class Renderer {
     private taskContent(task: Task): HTMLElement {
         const content = document.createElement("p");
         content.classList.add("task-content");
+        if (task.content.startsWith("done:")) {
+            content.classList.add("task-done");
+        }
         content.textContent = task.content.trim();
         content.tabIndex = 0;
 
@@ -121,8 +124,9 @@ export class Renderer {
                 return;
             }
             this.eventHandler({
-                tag: "edit_board",
-                title: value,
+                tag: "edit_task",
+                target: task.id,
+                content: value,
             });
         };
 

@@ -44,6 +44,7 @@ export type Action =
     | { tag: "edit_board"; title: string };
 
 function cmpId(left: Id, right: Id): boolean {
+    console.log(left, right);
     return left.inner === right.inner;
 }
 
