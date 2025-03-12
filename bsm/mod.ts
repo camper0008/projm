@@ -44,7 +44,6 @@ export type Action =
     | { tag: "edit_board"; title: string };
 
 function cmpId(left: Id, right: Id): boolean {
-    console.log(left, right);
     return left.inner === right.inner;
 }
 
@@ -54,6 +53,10 @@ function makeId(board: Board): Id {
     };
     board.idCounter += 1;
     return id;
+}
+
+function assertNever(x: never): never {
+    throw new Error(`unreachable: ${x} is never`);
 }
 
 export function makeBoard(title: string): Board {
@@ -152,8 +155,6 @@ export function execute({ board, action }: { board: Board; action: Action }) {
             if (!board.child) {
                 throw new Error("cannot add task without a column");
             }
-            console.dir(action);
-            console.dir(board);
             const src = removeTask(board, action.src);
             if (!src) {
                 throw new Error("task  does not exist");
@@ -231,8 +232,11 @@ export function execute({ board, action }: { board: Board; action: Action }) {
         }
         case "edit_board": {
             board.title = action.title;
+
             break;
         }
+        default:
+            assertNever(action);
     }
 }
 
