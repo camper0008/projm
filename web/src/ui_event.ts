@@ -38,6 +38,10 @@ export type UiEvent =
 
 export type UiEventHandler = (event: UiEvent) => void;
 
+function assertNever(x: never): never {
+    throw new Error(`unreachable: ${x} is never`);
+}
+
 async function removeBoard(board: storage.Id, storage: storage.Storage) {
     const res = await storage.deleteBoard({ board });
     if (!res.ok) {
@@ -206,5 +210,7 @@ export function handleUiEvent(
             attemptCommit(action, storage, board);
             break;
         }
+        default:
+            assertNever(event);
     }
 }
